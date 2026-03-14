@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+<<<<<<< HEAD
 const dbUrl = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lifelink';
 
 // Disable buffering so we fail fast if the DB is down
@@ -43,3 +44,19 @@ const connectDB = async (opts = {}) => {
 };
 
 module.exports = { connectDB };
+=======
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (err) {
+    console.error(`❌ MongoDB Error: ${err.message}`);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+>>>>>>> 8d23fc7 (commit)
