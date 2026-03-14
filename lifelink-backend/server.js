@@ -1,4 +1,5 @@
 require('dotenv').config();
+<<<<<<< HEAD
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -27,11 +28,29 @@ if (isProduction) {
     process.exit(1);
   }
 }
+=======
+const express    = require('express');
+const http       = require('http');
+const path       = require('path');
+const { Server } = require('socket.io');
+const cors       = require('cors');
+const connectDB  = require('./config/db');
+
+const app    = express();
+const server = http.createServer(app);
+const io     = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
+
+// ── Connect DB ───────────────────────────────
+connectDB();
+>>>>>>> 8d23fc7 (commit)
 
 // ── Middleware ───────────────────────────────
 app.use(cors());
 app.use(express.json());
 
+<<<<<<< HEAD
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../lifelink-frontend')));
 
@@ -98,6 +117,48 @@ connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then
       console.error('❌ Server error:', err);
     }
     process.exit(1);
+=======
+// Make io accessible inside routes
+app.set('io', io);
+
+// ── Routes ───────────────────────────────────
+app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/alerts',    require('./routes/alerts'));
+app.use('/api/hospitals', require('./routes/hospitals'));
+
+// Serve frontend
+const FRONTEND_DIR = path.join(__dirname, '..', 'lifelink-frontend');
+app.use(express.static(FRONTEND_DIR));
+app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'login.html')));
+
+// ── Health check ─────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'LifeLink backend running 🚀', timestamp: new Date() });
+});
+
+// ── Socket.IO ────────────────────────────────
+io.on('connection', (socket) => {
+  console.log(`🔌 Client connected: ${socket.id}`);
+
+  // Donor shares live GPS location
+  socket.on('donor_location', ({ userId, lat, lng }) => {
+    socket.broadcast.emit('donor_moved', { userId, lat, lng });
+  });
+
+  // Donor joins a city room for targeted alerts
+  socket.on('join_city', (city) => {
+    socket.join(city);
+    console.log(`📍 ${socket.id} joined room: ${city}`);
+  });
+
+  // Hospital broadcasts urgent request to a city
+  socket.on('emergency_broadcast', ({ city, alert }) => {
+    io.to(city).emit('new_alert', alert);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`❌ Client disconnected: ${socket.id}`);
+>>>>>>> 8d23fc7 (commit)
   });
 });
 
@@ -107,7 +168,11 @@ if (isDev) {
   app.post('/api/dev/seed', async (req, res) => {
     try {
       const Hospital = require('./models/Hospital');
+<<<<<<< HEAD
       const Alert = require('./models/Alert');
+=======
+      const Alert    = require('./models/Alert');
+>>>>>>> 8d23fc7 (commit)
 
       await Hospital.deleteMany({});
       await Alert.deleteMany({});
@@ -172,6 +237,7 @@ if (isDev) {
   });
 }
 
+<<<<<<< HEAD
 setInterval(async () => {
   try {
     const BloodUnit = require('./models/BloodUnit');
@@ -188,3 +254,11 @@ setInterval(async () => {
     console.warn('Expiry tracker skipped:', err.message);
   }
 }, 60 * 60 * 1000);
+=======
+// ── Start ─────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+});
+>>>>>>> 8d23fc7 (commit)

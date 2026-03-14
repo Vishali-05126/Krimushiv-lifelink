@@ -1,4 +1,5 @@
 const express = require('express');
+<<<<<<< HEAD
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
@@ -13,15 +14,31 @@ const signToken = (id) =>
     process.env.JWT_SECRET || 'lifelink-dev-secret',
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
+=======
+const router  = express.Router();
+const jwt     = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
+const User    = require('../models/User');
+const { protect } = require('../middleware/auth');
+
+const signToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+>>>>>>> 8d23fc7 (commit)
 
 const safeUser = (u) => ({
   id: u._id, name: u.name, email: u.email, role: u.role,
   phone: u.phone, isVerified: u.isVerified, verifiedBadge: u.verifiedBadge,
   location: u.location, createdAt: u.createdAt,
   // donor
+<<<<<<< HEAD
   bloodType: u.bloodType, bloodReport: u.bloodReport, donations: u.donations,
   livesSaved: u.livesSaved, isAvailable: u.isAvailable, status: u.status,
   organDonor: u.organDonor, organsPledged: u.organsPledged, lastDonation: u.lastDonation,
+=======
+  bloodType: u.bloodType, donations: u.donations, trustScore: u.trustScore,
+  livesSaved: u.livesSaved, isAvailable: u.isAvailable, organDonor: u.organDonor,
+  organsPledged: u.organsPledged, lastDonation: u.lastDonation,
+>>>>>>> 8d23fc7 (commit)
   // receiver
   requiredBloodType: u.requiredBloodType, urgency: u.urgency, medicalCondition: u.medicalCondition,
   attendingHospital: u.attendingHospital, guardianName: u.guardianName,
@@ -34,13 +51,17 @@ const safeUser = (u) => ({
   acceptingDonors: u.acceptingDonors, operatingHours: u.operatingHours,
 });
 
+<<<<<<< HEAD
 const isDbReady = () => mongoose.connection.readyState === 1;
 
+=======
+>>>>>>> 8d23fc7 (commit)
 // ── POST /api/auth/register ───────────────────────────
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+<<<<<<< HEAD
   body('role').isIn(['donor', 'receiver', 'hospital', 'bloodbank']).withMessage('Valid role required'),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -53,6 +74,16 @@ router.post('/register', [
       ? await User.findOne({ email: req.body.email })
       : await fileAuthStore.findByEmail(req.body.email);
     if (existingUser)
+=======
+  body('role').isIn(['donor','receiver','hospital','bloodbank']).withMessage('Valid role required'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  try {
+    const { role } = req.body;
+    if (await User.findOne({ email: req.body.email }))
+>>>>>>> 8d23fc7 (commit)
       return res.status(409).json({ message: 'Email already registered' });
 
     let userData = {
@@ -61,7 +92,11 @@ router.post('/register', [
       phone: req.body.phone,
       location: {
         type: 'Point',
+<<<<<<< HEAD
         coordinates: [parseFloat(req.body.lng) || 0, parseFloat(req.body.lat) || 0],
+=======
+        coordinates: [parseFloat(req.body.lng)||0, parseFloat(req.body.lat)||0],
+>>>>>>> 8d23fc7 (commit)
         city: req.body.city || '', address: req.body.address || '',
       },
     };
@@ -71,7 +106,10 @@ router.post('/register', [
       if (!req.body.bloodType) return res.status(400).json({ message: 'Blood type required for donors' });
       Object.assign(userData, {
         bloodType: req.body.bloodType,
+<<<<<<< HEAD
         bloodReport: req.body.bloodReport,
+=======
+>>>>>>> 8d23fc7 (commit)
         dateOfBirth: req.body.dateOfBirth,
         gender: req.body.gender,
         weight: req.body.weight,
@@ -119,6 +157,7 @@ router.post('/register', [
       });
     }
 
+<<<<<<< HEAD
     const user = isDbReady()
       ? await User.create(userData)
       : await fileAuthStore.create(userData);
@@ -128,6 +167,12 @@ router.post('/register', [
     if (err.code === 'DUPLICATE_EMAIL') {
       return res.status(409).json({ message: 'Email already registered' });
     }
+=======
+    const user = await User.create(userData);
+    res.status(201).json({ token: signToken(user._id), user: safeUser(user) });
+
+  } catch (err) {
+>>>>>>> 8d23fc7 (commit)
     res.status(500).json({ message: err.message });
   }
 });
@@ -136,6 +181,7 @@ router.post('/register', [
 router.post('/login', [
   body('email').isEmail(),
   body('password').notEmpty(),
+<<<<<<< HEAD
   body('role').optional().isIn(['donor', 'receiver', 'hospital', 'bloodbank']),
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -149,6 +195,17 @@ router.post('/login', [
       : await fileAuthStore.findByEmail(email);
     if (!user || !(await user.matchPassword(password)) || (role && user.role !== role))
       return res.status(401).json({ message: 'Invalid email, password or role' });
+=======
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user || !(await user.matchPassword(password)))
+      return res.status(401).json({ message: 'Invalid email or password' });
+>>>>>>> 8d23fc7 (commit)
 
     res.json({ token: signToken(user._id), user: safeUser(user) });
   } catch (err) {
@@ -157,6 +214,7 @@ router.post('/login', [
 });
 
 // ── GET /api/auth/me ──────────────────────────────────
+<<<<<<< HEAD
 router.get('/me', async (req, res, next) => {
   if (isDbReady()) return protect(req, res, () => res.json({ user: safeUser(req.user) }));
 
@@ -174,20 +232,29 @@ router.get('/me', async (req, res, next) => {
     next(err);
   }
 });
+=======
+router.get('/me', protect, (req, res) => res.json({ user: safeUser(req.user) }));
+>>>>>>> 8d23fc7 (commit)
 
 // ── PUT /api/auth/location ────────────────────────────
 router.put('/location', protect, async (req, res) => {
   const { lat, lng, city, address } = req.body;
   await User.findByIdAndUpdate(req.user._id, {
+<<<<<<< HEAD
     location: { type: 'Point', coordinates: [parseFloat(lng) || 0, parseFloat(lat) || 0], city, address },
     isAvailable: true,
     status: 'available',
+=======
+    location: { type: 'Point', coordinates: [parseFloat(lng)||0, parseFloat(lat)||0], city, address },
+    isAvailable: true,
+>>>>>>> 8d23fc7 (commit)
   });
   res.json({ message: 'Location updated' });
 });
 
 // ── PUT /api/auth/availability ────────────────────────
 router.put('/availability', protect, async (req, res) => {
+<<<<<<< HEAD
   const isAvailable = req.body.isAvailable === true;
   const status = isAvailable ? 'available' : 'busy';
   await User.findByIdAndUpdate(req.user._id, { isAvailable, status });
@@ -251,6 +318,18 @@ router.put('/profile', protect, async (req, res) => {
     'requiredBloodType', 'urgency', 'attendingHospital', 'guardianName', 'guardianPhone',
     'hospitalName', 'contactPerson', 'website', 'bankName', 'operatingHours',
     'acceptingDonors', 'organDonor', 'organsPledged'];
+=======
+  await User.findByIdAndUpdate(req.user._id, { isAvailable: req.body.isAvailable });
+  res.json({ message: 'Availability updated' });
+});
+
+// ── PUT /api/auth/profile ─────────────────────────────
+router.put('/profile', protect, async (req, res) => {
+  const allowed = ['name','phone','bloodType','weight','medicalConditions',
+    'requiredBloodType','urgency','attendingHospital','guardianName','guardianPhone',
+    'hospitalName','contactPerson','website','bankName','operatingHours',
+    'acceptingDonors','organDonor','organsPledged'];
+>>>>>>> 8d23fc7 (commit)
   const updates = {};
   allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });
