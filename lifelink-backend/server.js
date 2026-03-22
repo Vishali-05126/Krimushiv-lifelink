@@ -28,7 +28,7 @@ if (isProduction) {
   }
 }
 
-// â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Middleware ───────────────────────────────
 app.use(cors());
 app.use(express.json());
 
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Routes ───────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/hospitals', require('./routes/hospitals'));
@@ -62,25 +62,25 @@ app.use('/api/insights', require('./routes/insights'));
 app.use('/api/bloodbank', require('./routes/bloodbank'));
 app.use('/api', require('./routes/match'));
 
-// â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Health check ─────────────────────────────
 app.get('/api/health', (req, res) => {
   const mongoConnected = mongoose.connection.readyState === 1;
   res.json({
     status: mongoConnected || fileDbFallbackEnabled ? 'ok' : 'degraded',
-    message: 'LifeLink backend running ðŸš€',
+    message: 'LifeLink backend running 🚀',
     database: mongoConnected ? 'mongodb connected' : 'local file auth fallback',
     uptime: process.uptime(),
     timestamp: new Date()
   });
 });
 
-// â”€â”€ Start local server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Start local server ───────────────────────
 const PORT = process.env.PORT || 5000;
 
 // Ensure DB connects (or tries) before starting server
 connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then((connected) => {
   if (!connected) {
-    console.warn('âš ï¸ Server started without a database connection. Some features will be unavailable.');
+    console.warn('⚠️ Server started without a database connection. Some features will be unavailable.');
   }
 
   const httpServer = http.createServer(app);
@@ -88,20 +88,20 @@ connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then
   if (io) app.set('io', io);
 
   httpServer.listen(PORT, () => {
-    console.log(`ðŸš€ LifeLink backend running on http://localhost:${PORT}`);
+    console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
   });
 
   httpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`âŒ Port ${PORT} is already in use.`);
+      console.error(`❌ Port ${PORT} is already in use.`);
     } else {
-      console.error('âŒ Server error:', err);
+      console.error('❌ Server error:', err);
     }
     process.exit(1);
   });
 });
 
-// â”€â”€ Seed sample data (dev only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Seed sample data (dev only) ───────────────
 const isDev = (process.env.NODE_ENV || 'development') === 'development';
 if (isDev) {
   app.post('/api/dev/seed', async (req, res) => {
@@ -145,8 +145,8 @@ if (isDev) {
       await Alert.insertMany([
         {
           type: 'blood_request', severity: 'critical',
-          title: "St. Mary's needs Oâˆ’ urgently",
-          message: "St. Mary's Hospital urgently needs Oâˆ’ blood for trauma surgery. Patient: Female, 34.",
+          title: "St. Mary's needs O− urgently",
+          message: "St. Mary's Hospital urgently needs O− blood for trauma surgery. Patient: Female, 34.",
           bloodType: 'O-', unitsNeeded: 2,
           hospital: {
             name: "St. Mary's Hospital", address: 'Anna Salai, Chennai',
@@ -155,8 +155,8 @@ if (isDev) {
         },
         {
           type: 'low_stock', severity: 'warning',
-          title: 'ABâˆ’ critically low at City General',
-          message: 'ABâˆ’ stock critical (2 units). Donors with ABâˆ’ blood needed urgently.',
+          title: 'AB− critically low at City General',
+          message: 'AB− stock critical (2 units). Donors with AB− blood needed urgently.',
           bloodType: 'AB-', unitsNeeded: 5,
           hospital: {
             name: 'City General', address: 'T. Nagar, Chennai',
@@ -165,7 +165,7 @@ if (isDev) {
         },
       ]);
 
-      res.json({ message: 'âœ… Seed data inserted successfully' });
+      res.json({ message: '✅ Seed data inserted successfully' });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }

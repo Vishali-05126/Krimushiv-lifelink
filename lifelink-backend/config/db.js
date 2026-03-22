@@ -18,22 +18,22 @@ const connectDB = async (opts = {}) => {
   return new Promise((resolve) => {
     const tryConnect = async () => {
       attempt += 1;
-      console.log(`ðŸ“¡ Attempting to connect to: ${dbUrl.replace(/:([^:@]+)@/, ':****@')}`);
+      console.log(`📡 Attempting to connect to: ${dbUrl.replace(/:([^:@]+)@/, ':****@')}`);
       try {
         await mongoose.connect(dbUrl, {
           // mongoose v7 uses these by default but keeping for clarity
           useNewUrlParser: true,
           useUnifiedTopology: true,
         });
-        console.log('âœ… MongoDB connected');
+        console.log('✅ MongoDB connected');
         resolve(true);
       } catch (err) {
-        console.warn(`âŒ MongoDB connect attempt ${attempt} failed: ${err.message}`);
+        console.warn(`❌ MongoDB connect attempt ${attempt} failed: ${err.message}`);
         if (attempt < maxRetries) {
           console.log(`Retrying in ${retryDelay}ms... (${attempt}/${maxRetries})`);
           setTimeout(tryConnect, retryDelay);
         } else {
-          console.error('âŒ All MongoDB connection attempts failed. Continuing without DB.');
+          console.error('❌ All MongoDB connection attempts failed. Continuing without DB.');
           resolve(false);
         }
       }

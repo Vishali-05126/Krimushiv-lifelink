@@ -36,7 +36,7 @@ const safeUser = (u) => ({
 
 const isDbReady = () => mongoose.connection.readyState === 1;
 
-// â”€â”€ POST /api/auth/register â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/auth/register ───────────────────────────
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
@@ -132,7 +132,7 @@ router.post('/register', [
   }
 });
 
-// â”€â”€ POST /api/auth/login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/auth/login ──────────────────────────────
 router.post('/login', [
   body('email').isEmail(),
   body('password').notEmpty(),
@@ -156,7 +156,7 @@ router.post('/login', [
   }
 });
 
-// â”€â”€ GET /api/auth/me â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/auth/me ──────────────────────────────────
 router.get('/me', async (req, res, next) => {
   if (isDbReady()) return protect(req, res, () => res.json({ user: safeUser(req.user) }));
 
@@ -175,7 +175,7 @@ router.get('/me', async (req, res, next) => {
   }
 });
 
-// â”€â”€ PUT /api/auth/location â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/auth/location ────────────────────────────
 router.put('/location', protect, async (req, res) => {
   const { lat, lng, city, address } = req.body;
   await User.findByIdAndUpdate(req.user._id, {
@@ -186,7 +186,7 @@ router.put('/location', protect, async (req, res) => {
   res.json({ message: 'Location updated' });
 });
 
-// â”€â”€ PUT /api/auth/availability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/auth/availability ────────────────────────
 router.put('/availability', protect, async (req, res) => {
   const isAvailable = req.body.isAvailable === true;
   const status = isAvailable ? 'available' : 'busy';
@@ -194,7 +194,7 @@ router.put('/availability', protect, async (req, res) => {
   res.json({ message: 'Availability updated', status });
 });
 
-// â€”â€” PUT /api/auth/status â€”â€”
+// —— PUT /api/auth/status ——
 // Update donor availability status (available | busy | offline)
 router.put('/status', protect, async (req, res) => {
   const { status } = req.body;
@@ -215,7 +215,7 @@ router.put('/status', protect, async (req, res) => {
   res.json({ user: safeUser(user), message: 'Status updated' });
 });
 
-// â”€â”€ PUT /api/auth/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/auth/profile ─────────────────────────────
 router.put('/donation', protect, async (req, res) => {
   if (req.user.role !== 'donor') {
     return res.status(403).json({ message: 'Only donor accounts can record donations' });

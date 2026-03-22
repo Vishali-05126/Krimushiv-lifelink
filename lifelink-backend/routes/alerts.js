@@ -9,7 +9,7 @@ const fileAuthStore = require('../utils/fileAuthStore');
 
 const isDbReady = () => mongoose.connection.readyState === 1;
 
-// â”€â”€ GET /api/alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/alerts ──────────────────────────
 // Fetch open alerts, optionally filtered by blood type or location
 router.get('/', protect, async (req, res) => {
   try {
@@ -35,7 +35,7 @@ router.get('/', protect, async (req, res) => {
     let alerts;
 
     if (lat && lng) {
-      // Geo query â€” find alerts near user
+      // Geo query — find alerts near user
       alerts = await Alert.find({
         ...query,
         'hospital.location': {
@@ -61,7 +61,7 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /api/alerts ─────────────────────────
 // Hospital or admin creates a new blood request alert
 router.post('/', protect, async (req, res) => {
   try {
@@ -118,7 +118,7 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
-// â”€â”€ PUT /api/alerts/:id/accept â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/alerts/:id/accept ───────────────
 // Donor accepts a blood request
 router.put('/:id/accept', protect, async (req, res) => {
   try {
@@ -163,13 +163,13 @@ router.put('/:id/accept', protect, async (req, res) => {
     if (io) io.emit('alert_updated', { id: alert._id, status: 'accepted', acceptedBy: req.user.name });
     return res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
 
-    res.json({ alert, message: 'Request accepted â€” navigate to hospital' });
+    res.json({ alert, message: 'Request accepted — navigate to hospital' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// â”€â”€ PUT /api/alerts/:id/fulfill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUT /api/alerts/:id/fulfill ──────────────
 // Mark donation as complete
 // Donor rejects a blood request because they are unavailable.
 router.put('/:id/reject', protect, async (req, res) => {
@@ -211,13 +211,13 @@ router.put('/:id/fulfill', protect, async (req, res) => {
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'fulfilled' });
 
-    res.json({ alert, message: 'Donation confirmed â€” life saved!' });
+    res.json({ alert, message: 'Donation confirmed — life saved!' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// â”€â”€ GET /api/alerts/nearby-donors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /api/alerts/nearby-donors ────────────
 // Find verified donors near a hospital for a specific blood type
 router.get('/nearby-donors', protect, async (req, res) => {
   try {
