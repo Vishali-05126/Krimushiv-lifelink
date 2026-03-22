@@ -1,66 +1,103 @@
 require('dotenv').config();
-const express    = require('express');
-const http       = require('http');
-const path       = require('path');
-const { Server } = require('socket.io');
-const cors       = require('cors');
-const connectDB  = require('./config/db');
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const http = require('http');
+const path = require('path');
+const { connectDB } = require('./config/db');
 
-const app    = express();
-const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
-});
+const fileDbFallbackEnabled = (process.env.NODE_ENV || 'development') === 'development';
 
-// ── Connect DB ───────────────────────────────
-connectDB();
+let socketio = null;
+try {
+  socketio = require('socket.io');
+} catch (_err) {
+  console.warn('Socket.IO is not installed. Real-time updates are disabled.');
+}
+
+const app = express();
+const isProduction = (process.env.NODE_ENV || 'development') === 'production';
+
+if (isProduction) {
+  const missing = [];
+  if (!process.env.JWT_SECRET) missing.push('JWT_SECRET');
+  if (!process.env.MONGODB_URI && !process.env.MONGO_URI) missing.push('MONGODB_URI');
+  if (missing.length) {
+    console.error(`Missing required production environment variable(s): ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 // ── Middleware ───────────────────────────────
 app.use(cors());
 app.use(express.json());
 
-// Make io accessible inside routes
-app.set('io', io);
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../lifelink-frontend')));
+
+app.use((req, res, next) => {
+  // Block database-dependent API requests until MongoDB is connected.
+  const isApiRequest = req.originalUrl.startsWith('/api');
+  const isHealthCheck = req.originalUrl === '/api/health';
+  const hasDemoFallback =
+    (req.method === 'GET' && req.originalUrl === '/api/bloodbank/features') ||
+    (req.method === 'POST' && req.originalUrl === '/api/bloodbank/records');
+  const hasFileFallback = fileDbFallbackEnabled && (
+    req.originalUrl.startsWith('/api/auth') ||
+    req.originalUrl.startsWith('/api/alerts')
+  );
+  if (isApiRequest && !isHealthCheck && !hasDemoFallback && !hasFileFallback && mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      message: 'LifeLink is still connecting to the database. Please wait a few seconds and try again.'
+    });
+  }
+  next();
+});
 
 // ── Routes ───────────────────────────────────
-app.use('/api/auth',      require('./routes/auth'));
-app.use('/api/alerts',    require('./routes/alerts'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/hospitals', require('./routes/hospitals'));
-app.use('/api/insights',  require('./routes/insights'));
-app.use('/',              require('./routes/match'));
-
-// Serve frontend
-const FRONTEND_DIR = path.join(__dirname, '..', 'lifelink-frontend');
-app.use(express.static(FRONTEND_DIR));
-app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'login.html')));
+app.use('/api/insights', require('./routes/insights'));
+app.use('/api/bloodbank', require('./routes/bloodbank'));
+app.use('/api', require('./routes/match'));
 
 // ── Health check ─────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'LifeLink backend running 🚀', timestamp: new Date() });
+  const mongoConnected = mongoose.connection.readyState === 1;
+  res.json({
+    status: mongoConnected || fileDbFallbackEnabled ? 'ok' : 'degraded',
+    message: 'LifeLink backend running 🚀',
+    database: mongoConnected ? 'mongodb connected' : 'local file auth fallback',
+    uptime: process.uptime(),
+    timestamp: new Date()
+  });
 });
 
-// ── Socket.IO ────────────────────────────────
-io.on('connection', (socket) => {
-  console.log(`🔌 Client connected: ${socket.id}`);
+// ── Start local server ───────────────────────
+const PORT = process.env.PORT || 5000;
 
-  // Donor shares live GPS location
-  socket.on('donor_location', ({ userId, lat, lng }) => {
-    socket.broadcast.emit('donor_moved', { userId, lat, lng });
+// Ensure DB connects (or tries) before starting server
+connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then((connected) => {
+  if (!connected) {
+    console.warn('⚠️ Server started without a database connection. Some features will be unavailable.');
+  }
+
+  const httpServer = http.createServer(app);
+  const io = socketio ? socketio(httpServer, { cors: { origin: "*" } }) : null;
+  if (io) app.set('io', io);
+
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
   });
 
-  // Donor joins a city room for targeted alerts
-  socket.on('join_city', (city) => {
-    socket.join(city);
-    console.log(`📍 ${socket.id} joined room: ${city}`);
-  });
-
-  // Hospital broadcasts urgent request to a city
-  socket.on('emergency_broadcast', ({ city, alert }) => {
-    io.to(city).emit('new_alert', alert);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`❌ Client disconnected: ${socket.id}`);
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use.`);
+    } else {
+      console.error('❌ Server error:', err);
+    }
+    process.exit(1);
   });
 });
 
@@ -70,7 +107,7 @@ if (isDev) {
   app.post('/api/dev/seed', async (req, res) => {
     try {
       const Hospital = require('./models/Hospital');
-      const Alert    = require('./models/Alert');
+      const Alert = require('./models/Alert');
 
       await Hospital.deleteMany({});
       await Alert.deleteMany({});
@@ -135,9 +172,19 @@ if (isDev) {
   });
 }
 
-// ── Start ─────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-});
+setInterval(async () => {
+  try {
+    const BloodUnit = require('./models/BloodUnit');
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) return;
+    const io = app.get('io');
+
+    const soon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiring = await BloodUnit.find({ expiryDate: { $lte: soon }, status: { $ne: 'expired' } }).lean();
+    if (expiring.length) {
+      console.info(`[Expiry Alert] ${expiring.length} units approaching expiry.`);
+    }
+  } catch (err) {
+    console.warn('Expiry tracker skipped:', err.message);
+  }
+}, 60 * 60 * 1000);

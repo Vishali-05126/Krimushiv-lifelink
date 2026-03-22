@@ -1,16 +1,35 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Alert = require('../models/Alert');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const fileAlertStore = require('../utils/fileAlertStore');
+const fileAuthStore = require('../utils/fileAuthStore');
+
+const isDbReady = () => mongoose.connection.readyState === 1;
 
 // ── GET /api/alerts ──────────────────────────
 // Fetch open alerts, optionally filtered by blood type or location
 router.get('/', protect, async (req, res) => {
   try {
-    const { bloodType, lat, lng, radius = 20000 } = req.query; // radius in meters
+    if (!isDbReady()) {
+      const alerts = await fileAlertStore.listForDonor(req.user, req.query);
+      return res.json({ alerts });
+    }
 
-    let query = { status: 'open', expiresAt: { $gt: new Date() } };
+    const { bloodType, lat, lng, radius = 20000, ownOnly } = req.query; // radius in meters
+
+    let query = {};
+
+    if (ownOnly === 'true') {
+      // Hospitals see all their requests (open, accepted, fulfilled)
+      query = { requestedBy: req.user._id };
+    } else {
+      query.status = 'open';
+      query.expiresAt = { $gt: new Date() };
+    }
+
     if (bloodType) query.bloodType = { $in: [bloodType, 'O-'] }; // O- is universal
 
     let alerts;
@@ -103,6 +122,23 @@ router.post('/', protect, async (req, res) => {
 // Donor accepts a blood request
 router.put('/:id/accept', protect, async (req, res) => {
   try {
+    if (req.user.role !== 'donor') {
+      return res.status(403).json({ message: 'Only donors can accept blood requests' });
+    }
+    if (req.user.isAvailable === false || req.user.status === 'busy') {
+      return res.status(400).json({ message: 'You are marked busy. Change availability before accepting.' });
+    }
+
+    if (!isDbReady()) {
+      const alert = await fileAlertStore.mark(req.params.id, 'accepted', req.user);
+      if (!alert) return res.status(404).json({ message: 'Alert not found' });
+      const user = await fileAuthStore.recordAcceptedDonation(req.user._id || req.user.id, {
+        donationsToAdd: 1,
+        livesSavedToAdd: 3,
+      });
+      return res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
+    }
+
     const alert = await Alert.findById(req.params.id);
     if (!alert) return res.status(404).json({ message: 'Alert not found' });
     if (alert.status !== 'open') return res.status(400).json({ message: 'Alert already accepted' });
@@ -111,9 +147,21 @@ router.put('/:id/accept', protect, async (req, res) => {
     alert.acceptedBy = req.user._id;
     await alert.save();
 
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        lastDonation: new Date(),
+        status: 'busy',
+        isAvailable: false,
+        $inc: { donations: 1, livesSaved: 3 },
+      },
+      { new: true }
+    );
+
     // Notify all clients of the status change
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'accepted', acceptedBy: req.user.name });
+    return res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
 
     res.json({ alert, message: 'Request accepted — navigate to hospital' });
   } catch (err) {
@@ -123,6 +171,35 @@ router.put('/:id/accept', protect, async (req, res) => {
 
 // ── PUT /api/alerts/:id/fulfill ──────────────
 // Mark donation as complete
+// Donor rejects a blood request because they are unavailable.
+router.put('/:id/reject', protect, async (req, res) => {
+  try {
+    if (req.user.role !== 'donor') {
+      return res.status(403).json({ message: 'Only donors can reject blood requests' });
+    }
+
+    if (!isDbReady()) {
+      const alert = await fileAlertStore.mark(req.params.id, 'rejected', req.user);
+      if (!alert) return res.status(404).json({ message: 'Alert not found' });
+      return res.json({ alert, message: 'Request declined. Your donation count was not changed.' });
+    }
+
+    const alert = await Alert.findById(req.params.id);
+    if (!alert) return res.status(404).json({ message: 'Alert not found' });
+    if (alert.status !== 'open') return res.status(400).json({ message: 'Alert already handled' });
+
+    alert.status = 'rejected';
+    await alert.save();
+
+    const io = req.app.get('io');
+    if (io) io.emit('alert_updated', { id: alert._id, status: 'rejected', rejectedBy: req.user.name });
+
+    res.json({ alert, message: 'Request declined. Your donation count was not changed.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.put('/:id/fulfill', protect, async (req, res) => {
   try {
     const alert = await Alert.findByIdAndUpdate(
@@ -130,12 +207,6 @@ router.put('/:id/fulfill', protect, async (req, res) => {
       { status: 'fulfilled' },
       { new: true }
     );
-
-    // Increment donor's donation count and lives saved
-    await User.findByIdAndUpdate(req.user._id, {
-      $inc: { donations: 1, livesSaved: 1 },
-      lastDonation: new Date(),
-    });
 
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'fulfilled' });
@@ -162,7 +233,7 @@ router.get('/nearby-donors', protect, async (req, res) => {
         },
       },
     })
-      .select('name bloodType trustScore donations location isAvailable status verifiedBadge lastDonation diseases hemoglobin healthScore')
+      .select('name bloodType donations location isAvailable status verifiedBadge lastDonation diseases hemoglobin healthScore')
       .limit(100); // Get more for ranking
 
     // Calculate distance for each donor

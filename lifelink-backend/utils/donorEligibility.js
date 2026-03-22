@@ -27,14 +27,6 @@ class DonorEligibility {
     return Math.max(0, Math.min(1, value));
   }
 
-  static normalizeTrustScore(score) {
-    if (score === undefined || score === null) return 0.8;
-    const num = Number(score);
-    if (Number.isNaN(num)) return 0.8;
-    // Support both 0-1 and 0-5 scales
-    return this.clamp01(num > 1 ? num / 5 : num);
-  }
-
   static getHealthScore(hemoglobin) {
     const hb = Number(hemoglobin);
     if (Number.isNaN(hb) || hb <= 0) return 0.8;
@@ -91,14 +83,12 @@ class DonorEligibility {
     const compatibility = this.isCompatible(donor.bloodType, request.bloodType) ? 1 : 0;
     const distanceKm = Math.max(0.5, Number(donor.distance) || 9999);
     const distanceScore = 1 / distanceKm;
-    const trustScore = this.normalizeTrustScore(donor.trustScore);
     const healthScore = this.getHealthScore(donor.hemoglobin);
 
     return (
-      0.35 * compatibility +
-      0.2 * distanceScore +
-      0.2 * trustScore +
-      0.25 * healthScore
+      0.45 * compatibility +
+      0.25 * distanceScore +
+      0.3 * healthScore
     );
   }
 

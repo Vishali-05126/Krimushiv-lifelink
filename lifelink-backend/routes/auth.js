@@ -1,19 +1,25 @@
 const express = require('express');
-const router  = express.Router();
-const jwt     = require('jsonwebtoken');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
-const User    = require('../models/User');
+const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const fileAuthStore = require('../utils/fileAuthStore');
 
 const signToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+  jwt.sign(
+    { id },
+    process.env.JWT_SECRET || 'lifelink-dev-secret',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
 
 const safeUser = (u) => ({
   id: u._id, name: u.name, email: u.email, role: u.role,
   phone: u.phone, isVerified: u.isVerified, verifiedBadge: u.verifiedBadge,
   location: u.location, createdAt: u.createdAt,
   // donor
-  bloodType: u.bloodType, donations: u.donations, trustScore: u.trustScore,
+  bloodType: u.bloodType, bloodReport: u.bloodReport, donations: u.donations,
   livesSaved: u.livesSaved, isAvailable: u.isAvailable, status: u.status,
   organDonor: u.organDonor, organsPledged: u.organsPledged, lastDonation: u.lastDonation,
   // receiver
@@ -28,19 +34,25 @@ const safeUser = (u) => ({
   acceptingDonors: u.acceptingDonors, operatingHours: u.operatingHours,
 });
 
+const isDbReady = () => mongoose.connection.readyState === 1;
+
 // ── POST /api/auth/register ───────────────────────────
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('role').isIn(['donor','receiver','hospital','bloodbank']).withMessage('Valid role required'),
+  body('role').isIn(['donor', 'receiver', 'hospital', 'bloodbank']).withMessage('Valid role required'),
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(400).json({ message: errors.array()[0].msg });
 
   try {
     const { role } = req.body;
-    if (await User.findOne({ email: req.body.email }))
+    const existingUser = isDbReady()
+      ? await User.findOne({ email: req.body.email })
+      : await fileAuthStore.findByEmail(req.body.email);
+    if (existingUser)
       return res.status(409).json({ message: 'Email already registered' });
 
     let userData = {
@@ -49,7 +61,7 @@ router.post('/register', [
       phone: req.body.phone,
       location: {
         type: 'Point',
-        coordinates: [parseFloat(req.body.lng)||0, parseFloat(req.body.lat)||0],
+        coordinates: [parseFloat(req.body.lng) || 0, parseFloat(req.body.lat) || 0],
         city: req.body.city || '', address: req.body.address || '',
       },
     };
@@ -59,6 +71,7 @@ router.post('/register', [
       if (!req.body.bloodType) return res.status(400).json({ message: 'Blood type required for donors' });
       Object.assign(userData, {
         bloodType: req.body.bloodType,
+        bloodReport: req.body.bloodReport,
         dateOfBirth: req.body.dateOfBirth,
         gender: req.body.gender,
         weight: req.body.weight,
@@ -106,10 +119,15 @@ router.post('/register', [
       });
     }
 
-    const user = await User.create(userData);
+    const user = isDbReady()
+      ? await User.create(userData)
+      : await fileAuthStore.create(userData);
     res.status(201).json({ token: signToken(user._id), user: safeUser(user) });
 
   } catch (err) {
+    if (err.code === 'DUPLICATE_EMAIL') {
+      return res.status(409).json({ message: 'Email already registered' });
+    }
     res.status(500).json({ message: err.message });
   }
 });
@@ -118,15 +136,19 @@ router.post('/register', [
 router.post('/login', [
   body('email').isEmail(),
   body('password').notEmpty(),
+  body('role').optional().isIn(['donor', 'receiver', 'hospital', 'bloodbank']),
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!errors.isEmpty())
+    return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid login data' });
 
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password)))
-      return res.status(401).json({ message: 'Invalid email or password' });
+    const { email, password, role } = req.body;
+    const user = isDbReady()
+      ? await User.findOne({ email })
+      : await fileAuthStore.findByEmail(email);
+    if (!user || !(await user.matchPassword(password)) || (role && user.role !== role))
+      return res.status(401).json({ message: 'Invalid email, password or role' });
 
     res.json({ token: signToken(user._id), user: safeUser(user) });
   } catch (err) {
@@ -135,13 +157,29 @@ router.post('/login', [
 });
 
 // ── GET /api/auth/me ──────────────────────────────────
-router.get('/me', protect, (req, res) => res.json({ user: safeUser(req.user) }));
+router.get('/me', async (req, res, next) => {
+  if (isDbReady()) return protect(req, res, () => res.json({ user: safeUser(req.user) }));
+
+  try {
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ message: 'Not authorized, token missing' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'lifelink-dev-secret');
+    const user = await fileAuthStore.findById(decoded.id);
+    if (!user) return res.status(401).json({ message: 'Not authorized, user not found' });
+
+    res.json({ user: safeUser(user) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── PUT /api/auth/location ────────────────────────────
 router.put('/location', protect, async (req, res) => {
   const { lat, lng, city, address } = req.body;
   await User.findByIdAndUpdate(req.user._id, {
-    location: { type: 'Point', coordinates: [parseFloat(lng)||0, parseFloat(lat)||0], city, address },
+    location: { type: 'Point', coordinates: [parseFloat(lng) || 0, parseFloat(lat) || 0], city, address },
     isAvailable: true,
     status: 'available',
   });
@@ -178,11 +216,41 @@ router.put('/status', protect, async (req, res) => {
 });
 
 // ── PUT /api/auth/profile ─────────────────────────────
+router.put('/donation', protect, async (req, res) => {
+  if (req.user.role !== 'donor') {
+    return res.status(403).json({ message: 'Only donor accounts can record donations' });
+  }
+
+  const donationDate = req.body.donationDate ? new Date(req.body.donationDate) : new Date();
+  if (Number.isNaN(donationDate.getTime())) {
+    return res.status(400).json({ message: 'Valid donation date is required' });
+  }
+
+  const donationsToAdd = Number(req.body.donationsToAdd || 1);
+  const livesSavedToAdd = Number(req.body.livesSavedToAdd || 3);
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      lastDonation: donationDate,
+      $inc: {
+        donations: Number.isFinite(donationsToAdd) ? donationsToAdd : 1,
+        livesSaved: Number.isFinite(livesSavedToAdd) ? livesSavedToAdd : 3,
+      },
+      status: 'busy',
+      isAvailable: false,
+    },
+    { new: true }
+  );
+
+  res.json({ user: safeUser(user), message: 'Donation recorded' });
+});
+
 router.put('/profile', protect, async (req, res) => {
-  const allowed = ['name','phone','bloodType','weight','medicalConditions',
-    'requiredBloodType','urgency','attendingHospital','guardianName','guardianPhone',
-    'hospitalName','contactPerson','website','bankName','operatingHours',
-    'acceptingDonors','organDonor','organsPledged'];
+  const allowed = ['name', 'phone', 'bloodType', 'bloodReport', 'weight', 'medicalConditions',
+    'requiredBloodType', 'urgency', 'attendingHospital', 'guardianName', 'guardianPhone',
+    'hospitalName', 'contactPerson', 'website', 'bankName', 'operatingHours',
+    'acceptingDonors', 'organDonor', 'organsPledged'];
   const updates = {};
   allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true });

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeLink</title>
+  <script>
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('ll_user') || 'null');
+    } catch (_err) {
+      localStorage.removeItem('ll_user');
+    }
+    const role = user?.role || 'overview';
+    window.location.replace(localStorage.getItem('ll_token') ? `./dashboard.html#${role}` : './login.html');
+  </script>
+</head>
+<body>
+  <p>Opening LifeLink...</p>
+</body>
+</html>
