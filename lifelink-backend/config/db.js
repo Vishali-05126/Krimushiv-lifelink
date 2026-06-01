@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-<<<<<<< HEAD
 const dbUrl = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lifelink';
 
 // Disable buffering so we fail fast if the DB is down
@@ -19,22 +18,22 @@ const connectDB = async (opts = {}) => {
   return new Promise((resolve) => {
     const tryConnect = async () => {
       attempt += 1;
-      console.log(`📡 Attempting to connect to: ${dbUrl.replace(/:([^:@]+)@/, ':****@')}`);
+      console.log(`ðŸ“¡ Attempting to connect to: ${dbUrl.replace(/:([^:@]+)@/, ':****@')}`);
       try {
         await mongoose.connect(dbUrl, {
           // mongoose v7 uses these by default but keeping for clarity
           useNewUrlParser: true,
           useUnifiedTopology: true,
         });
-        console.log('✅ MongoDB connected');
+        console.log('âœ… MongoDB connected');
         resolve(true);
       } catch (err) {
-        console.warn(`❌ MongoDB connect attempt ${attempt} failed: ${err.message}`);
+        console.warn(`âŒ MongoDB connect attempt ${attempt} failed: ${err.message}`);
         if (attempt < maxRetries) {
           console.log(`Retrying in ${retryDelay}ms... (${attempt}/${maxRetries})`);
           setTimeout(tryConnect, retryDelay);
         } else {
-          console.error('❌ All MongoDB connection attempts failed. Continuing without DB.');
+          console.error('âŒ All MongoDB connection attempts failed. Continuing without DB.');
           resolve(false);
         }
       }
@@ -44,19 +43,3 @@ const connectDB = async (opts = {}) => {
 };
 
 module.exports = { connectDB };
-=======
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-  } catch (err) {
-    console.error(`❌ MongoDB Error: ${err.message}`);
-    process.exit(1);
-  }
-};
-
-module.exports = connectDB;
->>>>>>> 8d23fc7 (commit)
