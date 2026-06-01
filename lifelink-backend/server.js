@@ -1,5 +1,4 @@
 require('dotenv').config();
-<<<<<<< HEAD
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -28,29 +27,11 @@ if (isProduction) {
     process.exit(1);
   }
 }
-=======
-const express    = require('express');
-const http       = require('http');
-const path       = require('path');
-const { Server } = require('socket.io');
-const cors       = require('cors');
-const connectDB  = require('./config/db');
 
-const app    = express();
-const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] },
-});
-
-// ── Connect DB ───────────────────────────────
-connectDB();
->>>>>>> 8d23fc7 (commit)
-
-// ── Middleware ───────────────────────────────
+// â”€â”€ Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< HEAD
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../lifelink-frontend')));
 
@@ -73,7 +54,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Routes ───────────────────────────────────
+// â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/hospitals', require('./routes/hospitals'));
@@ -81,25 +62,25 @@ app.use('/api/insights', require('./routes/insights'));
 app.use('/api/bloodbank', require('./routes/bloodbank'));
 app.use('/api', require('./routes/match'));
 
-// ── Health check ─────────────────────────────
+// â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 app.get('/api/health', (req, res) => {
   const mongoConnected = mongoose.connection.readyState === 1;
   res.json({
     status: mongoConnected || fileDbFallbackEnabled ? 'ok' : 'degraded',
-    message: 'LifeLink backend running 🚀',
+    message: 'LifeLink backend running ðŸš€',
     database: mongoConnected ? 'mongodb connected' : 'local file auth fallback',
     uptime: process.uptime(),
     timestamp: new Date()
   });
 });
 
-// ── Start local server ───────────────────────
+// â”€â”€ Start local server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PORT = process.env.PORT || 5000;
 
 // Ensure DB connects (or tries) before starting server
 connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then((connected) => {
   if (!connected) {
-    console.warn('⚠️ Server started without a database connection. Some features will be unavailable.');
+    console.warn('âš ï¸ Server started without a database connection. Some features will be unavailable.');
   }
 
   const httpServer = http.createServer(app);
@@ -107,72 +88,26 @@ connectDB(fileDbFallbackEnabled ? { retries: 1, delayMs: 500 } : undefined).then
   if (io) app.set('io', io);
 
   httpServer.listen(PORT, () => {
-    console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
+    console.log(`ðŸš€ LifeLink backend running on http://localhost:${PORT}`);
   });
 
   httpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${PORT} is already in use.`);
+      console.error(`âŒ Port ${PORT} is already in use.`);
     } else {
-      console.error('❌ Server error:', err);
+      console.error('âŒ Server error:', err);
     }
     process.exit(1);
-=======
-// Make io accessible inside routes
-app.set('io', io);
-
-// ── Routes ───────────────────────────────────
-app.use('/api/auth',      require('./routes/auth'));
-app.use('/api/alerts',    require('./routes/alerts'));
-app.use('/api/hospitals', require('./routes/hospitals'));
-
-// Serve frontend
-const FRONTEND_DIR = path.join(__dirname, '..', 'lifelink-frontend');
-app.use(express.static(FRONTEND_DIR));
-app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_DIR, 'login.html')));
-
-// ── Health check ─────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'LifeLink backend running 🚀', timestamp: new Date() });
-});
-
-// ── Socket.IO ────────────────────────────────
-io.on('connection', (socket) => {
-  console.log(`🔌 Client connected: ${socket.id}`);
-
-  // Donor shares live GPS location
-  socket.on('donor_location', ({ userId, lat, lng }) => {
-    socket.broadcast.emit('donor_moved', { userId, lat, lng });
-  });
-
-  // Donor joins a city room for targeted alerts
-  socket.on('join_city', (city) => {
-    socket.join(city);
-    console.log(`📍 ${socket.id} joined room: ${city}`);
-  });
-
-  // Hospital broadcasts urgent request to a city
-  socket.on('emergency_broadcast', ({ city, alert }) => {
-    io.to(city).emit('new_alert', alert);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`❌ Client disconnected: ${socket.id}`);
->>>>>>> 8d23fc7 (commit)
   });
 });
 
-// ── Seed sample data (dev only) ───────────────
+// â”€â”€ Seed sample data (dev only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const isDev = (process.env.NODE_ENV || 'development') === 'development';
 if (isDev) {
   app.post('/api/dev/seed', async (req, res) => {
     try {
       const Hospital = require('./models/Hospital');
-<<<<<<< HEAD
       const Alert = require('./models/Alert');
-=======
-      const Alert    = require('./models/Alert');
->>>>>>> 8d23fc7 (commit)
 
       await Hospital.deleteMany({});
       await Alert.deleteMany({});
@@ -210,8 +145,8 @@ if (isDev) {
       await Alert.insertMany([
         {
           type: 'blood_request', severity: 'critical',
-          title: "St. Mary's needs O− urgently",
-          message: "St. Mary's Hospital urgently needs O− blood for trauma surgery. Patient: Female, 34.",
+          title: "St. Mary's needs Oâˆ’ urgently",
+          message: "St. Mary's Hospital urgently needs Oâˆ’ blood for trauma surgery. Patient: Female, 34.",
           bloodType: 'O-', unitsNeeded: 2,
           hospital: {
             name: "St. Mary's Hospital", address: 'Anna Salai, Chennai',
@@ -220,8 +155,8 @@ if (isDev) {
         },
         {
           type: 'low_stock', severity: 'warning',
-          title: 'AB− critically low at City General',
-          message: 'AB− stock critical (2 units). Donors with AB− blood needed urgently.',
+          title: 'ABâˆ’ critically low at City General',
+          message: 'ABâˆ’ stock critical (2 units). Donors with ABâˆ’ blood needed urgently.',
           bloodType: 'AB-', unitsNeeded: 5,
           hospital: {
             name: 'City General', address: 'T. Nagar, Chennai',
@@ -230,14 +165,13 @@ if (isDev) {
         },
       ]);
 
-      res.json({ message: '✅ Seed data inserted successfully' });
+      res.json({ message: 'âœ… Seed data inserted successfully' });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   });
 }
 
-<<<<<<< HEAD
 setInterval(async () => {
   try {
     const BloodUnit = require('./models/BloodUnit');
@@ -254,11 +188,3 @@ setInterval(async () => {
     console.warn('Expiry tracker skipped:', err.message);
   }
 }, 60 * 60 * 1000);
-=======
-// ── Start ─────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 LifeLink backend running on http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-});
->>>>>>> 8d23fc7 (commit)
