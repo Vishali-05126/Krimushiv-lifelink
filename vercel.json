@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/lifelink-frontend/index.html"
+    },
+    {
+      "source": "/login.html",
+      "destination": "/lifelink-frontend/login.html"
+    },
+    {
+      "source": "/dashboard.html",
+      "destination": "/lifelink-frontend/dashboard.html"
+    },
+    {
+      "source": "/lifelink-api.js",
+      "destination": "/lifelink-frontend/lifelink-api.js"
+    }
+  ]
+}
