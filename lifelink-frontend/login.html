@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LifeLink - Role-Based Access</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --primary: #1D4ED8;
@@ -16,6 +19,7 @@
       --gold: #F59E0B;
       --red: #EF4444;
       --green: #10B981;
+      --purple: #8B5CF6;
       --muted: #6B7280;
       --border: #DBEAFE;
       --text: #0F172A;
@@ -26,10 +30,32 @@
       --font-mono: "Space Mono", monospace;
       --font-body: "DM Sans", sans-serif;
     }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow-x: hidden; }
-    button, input, select { font: inherit; }
-    button { cursor: pointer; }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
 
     #role-screen {
       min-height: 100vh;
@@ -37,9 +63,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(29,78,216,0.18) 0%, transparent 70%), #F0F4FF;
+      background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(29, 78, 216, 0.18) 0%, transparent 70%), #F0F4FF;
       padding: 40px 20px;
     }
+
     .role-logo {
       display: flex;
       align-items: center;
@@ -50,6 +77,7 @@
       color: var(--primary);
       margin-bottom: 8px;
     }
+
     .role-logo-icon {
       width: 42px;
       height: 42px;
@@ -63,11 +91,23 @@
       font-weight: 800;
       animation: pulse-logo 2s infinite;
     }
+
     @keyframes pulse-logo {
-      0%,100% { box-shadow: 0 0 0 0 rgba(29,78,216,0.4); }
-      50% { box-shadow: 0 0 0 10px rgba(29,78,216,0); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 10px rgba(29, 78, 216, 0);
+      }
     }
-    .role-logo span { color: var(--accent); }
+
+    .role-logo span {
+      color: var(--accent);
+    }
+
     .role-tagline {
       font-size: 15px;
       color: var(--text2);
@@ -75,15 +115,21 @@
       text-align: center;
       font-weight: 300;
     }
+
     .role-headline {
       font-family: var(--font-head);
-      font-size: clamp(28px,5vw,48px);
+      font-size: clamp(28px, 5vw, 48px);
       font-weight: 800;
       text-align: center;
+      letter-spacing: -1.5px;
       margin-bottom: 12px;
       line-height: 1.1;
     }
-    .role-headline span { color: var(--primary); }
+
+    .role-headline span {
+      color: var(--primary);
+    }
+
     .role-sub {
       font-size: 15px;
       color: var(--text2);
@@ -92,6 +138,7 @@
       max-width: 500px;
       line-height: 1.6;
     }
+
     .role-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -99,6 +146,7 @@
       max-width: 780px;
       width: 100%;
     }
+
     .role-card {
       background: #fff;
       border: 2px solid var(--border);
@@ -110,6 +158,7 @@
       overflow: hidden;
       text-align: left;
     }
+
     .role-card::before {
       content: "";
       position: absolute;
@@ -118,12 +167,17 @@
       opacity: 0;
       transition: opacity 0.25s;
     }
+
     .role-card:hover {
       transform: translateY(-6px);
       border-color: var(--rc-color, var(--primary));
-      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
     }
-    .role-card:hover::before { opacity: 0.04; }
+
+    .role-card:hover::before {
+      opacity: 0.04;
+    }
+
     .rc-icon {
       width: 56px;
       height: 56px;
@@ -137,6 +191,7 @@
       position: relative;
       z-index: 1;
     }
+
     .rc-title {
       font-family: var(--font-head);
       font-size: 20px;
@@ -145,6 +200,7 @@
       position: relative;
       z-index: 1;
     }
+
     .rc-desc {
       font-size: 13px;
       color: var(--text2);
@@ -153,6 +209,7 @@
       z-index: 1;
       margin-bottom: 20px;
     }
+
     .rc-features {
       display: flex;
       flex-wrap: wrap;
@@ -161,6 +218,7 @@
       z-index: 1;
       padding-right: 24px;
     }
+
     .rc-feat {
       font-size: 11px;
       padding: 4px 10px;
@@ -170,6 +228,7 @@
       font-family: var(--font-mono);
       font-weight: 700;
     }
+
     .rc-arrow {
       position: absolute;
       right: 24px;
@@ -180,7 +239,32 @@
       transition: all 0.25s;
       z-index: 1;
     }
-    .role-card:hover .rc-arrow { color: var(--rc-color, var(--primary)); transform: translateY(-50%) translateX(4px); }
+
+    .role-card:hover .rc-arrow {
+      color: var(--rc-color, var(--primary));
+      transform: translateY(-50%) translateX(4px);
+    }
+
+    .role-card[data-role="bloodbank"] .rc-icon,
+    .role-card[data-role="bloodbank"] .rc-arrow,
+    .back-btn {
+      font-size: 0;
+    }
+
+    .role-card[data-role="bloodbank"] .rc-icon::before {
+      content: "\1F3DB\FE0F";
+      font-size: 24px;
+    }
+
+    .role-card[data-role="bloodbank"] .rc-arrow::before {
+      content: "\2192";
+      font-size: 20px;
+    }
+
+    .back-btn::before {
+      content: "\2190  Roles";
+      font-size: 12px;
+    }
 
     #auth-screen {
       min-height: 100vh;
@@ -188,9 +272,13 @@
       align-items: center;
       justify-content: center;
       padding: 40px 20px;
-      background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(29,78,216,0.18) 0%, transparent 70%), #F0F4FF;
+      background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(29, 78, 216, 0.18) 0%, transparent 70%), #F0F4FF;
     }
-    #auth-screen.visible { display: flex; }
+
+    #auth-screen.visible {
+      display: flex;
+    }
+
     .auth-shell {
       width: min(1040px, 100%);
       display: grid;
@@ -199,8 +287,9 @@
       border: 1px solid var(--border);
       border-radius: 24px;
       overflow: hidden;
-      box-shadow: 0 24px 70px rgba(15,23,42,0.14);
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
     }
+
     .auth-side {
       padding: 34px;
       color: #fff;
@@ -210,39 +299,62 @@
       justify-content: space-between;
       min-height: 640px;
     }
+
     .auth-role-icon {
       width: 58px;
       height: 58px;
       border-radius: 18px;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 28px;
       margin-bottom: 18px;
     }
+
     .auth-side h1 {
       font-family: var(--font-head);
       font-size: clamp(32px, 5vw, 52px);
       line-height: 1;
       margin-bottom: 14px;
     }
-    .auth-side p { color: rgba(255,255,255,0.82); line-height: 1.7; max-width: 380px; }
+
+    .auth-side p {
+      color: rgba(255, 255, 255, 0.82);
+      line-height: 1.7;
+      max-width: 380px;
+    }
+
     .auth-mini-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
     }
+
     .auth-mini {
       min-height: 92px;
-      border: 1px solid rgba(255,255,255,0.24);
+      border: 1px solid rgba(255, 255, 255, 0.24);
       border-radius: 14px;
       padding: 14px;
-      background: rgba(255,255,255,0.12);
+      background: rgba(255, 255, 255, 0.12);
     }
-    .auth-mini strong { display: block; font-family: var(--font-head); margin-bottom: 6px; }
-    .auth-mini span { font-size: 12px; color: rgba(255,255,255,0.78); line-height: 1.45; }
-    .auth-panel { padding: 34px; }
+
+    .auth-mini strong {
+      display: block;
+      font-family: var(--font-head);
+      margin-bottom: 6px;
+    }
+
+    .auth-mini span {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.78);
+      line-height: 1.45;
+    }
+
+    .auth-panel {
+      padding: 34px;
+    }
+
     .auth-top {
       display: flex;
       align-items: center;
@@ -250,6 +362,7 @@
       gap: 12px;
       margin-bottom: 24px;
     }
+
     .back-btn {
       border: 1px solid var(--border);
       background: #F8FAFF;
@@ -259,12 +372,23 @@
       font-size: 12px;
       font-weight: 700;
     }
+
+    .back-btn {
+      font-size: 0;
+    }
+
+    .back-btn::before {
+      content: "\2190  Roles";
+      font-size: 12px;
+    }
+
     .mode-tabs {
       display: flex;
       gap: 8px;
       flex: 1;
       justify-content: flex-end;
     }
+
     .mode-tab {
       min-height: 40px;
       min-width: 110px;
@@ -276,12 +400,17 @@
       font-size: 13px;
       font-weight: 800;
     }
+
     .mode-tab.active {
       color: #fff;
       background: var(--primary);
       border-color: var(--primary);
     }
-    .panel-head { margin-bottom: 20px; }
+
+    .panel-head {
+      margin-bottom: 20px;
+    }
+
     .page-eyebrow {
       font-family: var(--font-mono);
       font-size: 10px;
@@ -291,17 +420,37 @@
       color: var(--primary-lt);
       margin-bottom: 6px;
     }
+
     .page-title {
       font-family: var(--font-head);
-      font-size: clamp(26px,3vw,38px);
+      font-size: clamp(26px, 3vw, 38px);
       font-weight: 800;
       line-height: 1.1;
       margin-bottom: 8px;
     }
-    .page-title span { color: var(--primary-lt); }
-    .page-sub { font-size: 14px; color: var(--text2); font-weight: 300; line-height: 1.6; }
-    form { display: grid; gap: 14px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .page-title span {
+      color: var(--primary-lt);
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--text2);
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
     .form-label {
       display: block;
       font-size: 12px;
@@ -312,7 +461,9 @@
       letter-spacing: 0.5px;
       font-family: var(--font-mono);
     }
-    .form-input, .form-select {
+
+    .form-input,
+    .form-select {
       width: 100%;
       min-height: 44px;
       padding: 11px 14px;
@@ -324,7 +475,14 @@
       font-family: var(--font-body);
       outline: none;
     }
-    .form-input:focus, .form-select:focus { border-color: var(--primary-lt); background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,0.12); }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: var(--primary-lt);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+    }
+
     .btn-primary {
       display: inline-flex;
       align-items: center;
@@ -341,61 +499,127 @@
       font-family: var(--font-head);
       transition: all 0.2s;
     }
-    .btn-primary:hover { background: var(--primary-lt); transform: scale(1.01); }
-    .btn-primary:disabled { opacity: 0.65; cursor: progress; transform: none; }
-    .message { min-height: 20px; margin-top: 2px; color: var(--red); font-size: 13px; }
-    .message.ok { color: var(--green); }
-    .hidden { display: none !important; }
-    @media(max-width:850px) {
-      .auth-shell { grid-template-columns: 1fr; }
-      .auth-side { min-height: auto; gap: 36px; }
+
+    .btn-primary:hover {
+      background: var(--primary-lt);
+      transform: scale(1.01);
     }
+
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: progress;
+      transform: none;
+    }
+
+    .message {
+      min-height: 20px;
+      margin-top: 2px;
+      color: var(--red);
+      font-size: 13px;
+    }
+
+    .message.ok {
+      color: var(--green);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media(max-width:850px) {
+      .auth-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-side {
+        min-height: auto;
+        gap: 36px;
+      }
+    }
+
     @media(max-width:600px) {
-      #role-screen, #auth-screen { padding: 24px 14px; justify-content: flex-start; }
-      .role-grid, .form-row, .auth-mini-grid { grid-template-columns: 1fr; }
-      .role-card { border-radius: 18px; padding: 24px 22px; }
-      .auth-panel, .auth-side { padding: 24px; }
-      .auth-top { flex-direction: column; align-items: stretch; }
-      .mode-tabs { justify-content: stretch; }
-      .mode-tab { flex: 1; min-width: 0; }
+
+      #role-screen,
+      #auth-screen {
+        padding: 24px 14px;
+        justify-content: flex-start;
+      }
+
+      .role-grid,
+      .form-row,
+      .auth-mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .role-card {
+        border-radius: 18px;
+        padding: 24px 22px;
+      }
+
+      .auth-panel,
+      .auth-side {
+        padding: 24px;
+      }
+
+      .auth-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .mode-tabs {
+        justify-content: stretch;
+      }
+
+      .mode-tab {
+        flex: 1;
+        min-width: 0;
+      }
     }
   </style>
 </head>
+
 <body>
   <section id="role-screen">
-    <div class="role-logo"><div class="role-logo-icon">LL</div>Life<span>Link</span></div>
+    <div class="role-logo">
+      <div class="role-logo-icon">&#x1FA78;</div>Life<span>Link</span>
+    </div>
     <div class="role-tagline">Emergency Health Network</div>
-    <h1 class="role-headline">Choose your <span>role</span></h1>
-    <p class="role-sub">Each workspace is tailored for the people coordinating blood requests, supply, and emergency response.</p>
+    <h1 class="role-headline">Choose Your <span>Role</span></h1>
+    <p class="role-sub">Select your role to access your personalized dashboard with the features that matter most to
+      you.</p>
 
     <div class="role-grid">
-      <button class="role-card" style="--rc-color:#1D4ED8;--rc-bg:#EFF6FF" data-role="donor" type="button">
-        <div class="rc-icon">ðŸ©¸</div>
+      <button class="role-card" style="--rc-color:#EF4444;--rc-bg:rgba(239,68,68,0.1)" data-role="donor" type="button">
+        <div class="rc-icon">&#x1FA78;</div>
         <div class="rc-title">Blood Donor</div>
-        <div class="rc-desc">Track readiness, accept urgent alerts, and record donation impact.</div>
-        <div class="rc-features"><span class="rc-feat">Alerts</span><span class="rc-feat">Eligibility</span><span class="rc-feat">Impact</span></div>
-        <div class="rc-arrow">â†’</div>
+        <div class="rc-desc">Donate blood, track your donation history, and receive emergency requests near you.</div>
+        <div class="rc-features"><span class="rc-feat">Donate</span><span class="rc-feat">History</span><span
+            class="rc-feat">Alerts</span></div>
+        <div class="rc-arrow">&rarr;</div>
       </button>
-      <button class="role-card" style="--rc-color:#10B981;--rc-bg:#ECFDF5" data-role="receiver" type="button">
-        <div class="rc-icon">ðŸ’š</div>
+      <button class="role-card" style="--rc-color:#8B5CF6;--rc-bg:rgba(139,92,246,0.1)" data-role="receiver" type="button">
+        <div class="rc-icon">&#x1FA7A;</div>
         <div class="rc-title">Receiver</div>
-        <div class="rc-desc">Monitor required blood type, urgency, and hospital coordination.</div>
-        <div class="rc-features"><span class="rc-feat">Requests</span><span class="rc-feat">Care</span><span class="rc-feat">Tracking</span></div>
-        <div class="rc-arrow">â†’</div>
+        <div class="rc-desc">Request blood, track availability, and get AI-powered emergency assistance.</div>
+        <div class="rc-features"><span class="rc-feat">Request</span><span class="rc-feat">Track</span><span
+            class="rc-feat">SOS</span></div>
+        <div class="rc-arrow">&rarr;</div>
       </button>
-      <button class="role-card" style="--rc-color:#F59E0B;--rc-bg:#FFFBEB" data-role="hospital" type="button">
-        <div class="rc-icon">ðŸ¥</div>
-        <div class="rc-title">Hospital</div>
-        <div class="rc-desc">Coordinate active cases, emergency requests, and donor dispatch.</div>
-        <div class="rc-features"><span class="rc-feat">Cases</span><span class="rc-feat">Dispatch</span><span class="rc-feat">Inventory</span></div>
-        <div class="rc-arrow">â†’</div>
-      </button>
-      <button class="role-card" style="--rc-color:#8B5CF6;--rc-bg:#F5F3FF" data-role="bloodbank" type="button">
-        <div class="rc-icon">ðŸ›ï¸</div>
+      <button class="role-card" style="--rc-color:#10B981;--rc-bg:rgba(16,185,129,0.1)" data-role="bloodbank" type="button">
+        <div class="rc-icon">❤</div>
         <div class="rc-title">Blood Bank</div>
-        <div class="rc-desc">Manage stock, transfers, collection records, and expiry alerts.</div>
-        <div class="rc-features"><span class="rc-feat">Stock</span><span class="rc-feat">Expiry</span><span class="rc-feat">Transfers</span></div>
-        <div class="rc-arrow">â†’</div>
+        <div class="rc-desc">Manage inventory, process requests, and coordinate with hospitals.</div>
+        <div class="rc-features"><span class="rc-feat">Inventory</span><span class="rc-feat">Requests</span><span
+            class="rc-feat">Expiry</span></div>
+        <div class="rc-arrow">→</div>
+      </button>
+      <button class="role-card" style="--rc-color:#F59E0B;--rc-bg:rgba(245,158,11,0.1)" data-role="hospital" type="button">
+        <div class="rc-icon">&#x1F3E5;</div>
+        <div class="rc-title">Hospital</div>
+        <div class="rc-desc">Create emergency requests, dispatch donors, and manage patient blood needs.</div>
+        <div class="rc-features"><span class="rc-feat">Emergency</span><span class="rc-feat">Patients</span><span
+            class="rc-feat">Dispatch</span></div>
+        <div class="rc-arrow">&rarr;</div>
       </button>
     </div>
   </section>
@@ -404,15 +628,19 @@
     <div class="auth-shell" id="authShell">
       <aside class="auth-side" id="authSide">
         <div>
-          <div class="auth-role-icon" id="authRoleIcon">ðŸ©¸</div>
+          <div class="auth-role-icon" id="authRoleIcon">&#x2764;&#xFE0F;</div>
           <h1 id="authRoleTitle">Blood Donor</h1>
           <p id="authRoleCopy">Track readiness, accept urgent alerts, and record donation impact.</p>
         </div>
         <div class="auth-mini-grid">
-          <div class="auth-mini"><strong id="miniOneTitle">Live</strong><span id="miniOneCopy">Role-specific dashboard after sign in.</span></div>
-          <div class="auth-mini"><strong id="miniTwoTitle">ABO</strong><span id="miniTwoCopy">Blood type aware matching.</span></div>
-          <div class="auth-mini"><strong id="miniThreeTitle">AI</strong><span id="miniThreeCopy">Dispatch and guidance tools.</span></div>
-          <div class="auth-mini"><strong id="miniFourTitle">API</strong><span id="miniFourCopy">Connected to your LifeLink backend.</span></div>
+          <div class="auth-mini"><strong id="miniOneTitle">Live</strong><span id="miniOneCopy">Role-specific dashboard
+              after sign in.</span></div>
+          <div class="auth-mini"><strong id="miniTwoTitle">ABO</strong><span id="miniTwoCopy">Blood type aware
+              matching.</span></div>
+          <div class="auth-mini"><strong id="miniThreeTitle">AI</strong><span id="miniThreeCopy">Dispatch and guidance
+              tools.</span></div>
+          <div class="auth-mini"><strong id="miniFourTitle">API</strong><span id="miniFourCopy">Connected to your
+              LifeLink backend.</span></div>
         </div>
       </aside>
       <section class="auth-panel">
@@ -447,10 +675,12 @@
           <input type="hidden" name="role" id="registerRole" value="donor">
           <div class="form-row">
             <div><label class="form-label">Name</label><input class="form-input" name="name" required></div>
-            <div><label class="form-label">Email</label><input class="form-input" name="email" type="email" autocomplete="email" required></div>
+            <div><label class="form-label">Email</label><input class="form-input" name="email" type="email"
+                autocomplete="email" required></div>
           </div>
           <div class="form-row">
-            <div><label class="form-label">Password</label><input class="form-input" name="password" type="password" minlength="6" autocomplete="new-password" required></div>
+            <div><label class="form-label">Password</label><input class="form-input" name="password" type="password"
+                minlength="6" autocomplete="new-password" required></div>
             <div><label class="form-label">Phone</label><input class="form-input" name="phone" type="tel"></div>
           </div>
           <div class="form-row">
@@ -462,34 +692,48 @@
             <div>
               <label class="form-label">Blood Type</label>
               <select class="form-select" name="bloodType">
-                <option value="O+">O+</option><option value="O-">O-</option>
-                <option value="A+">A+</option><option value="A-">A-</option>
-                <option value="B+">B+</option><option value="B-">B-</option>
-                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
               </select>
             </div>
-            <div><label class="form-label">Weight</label><input class="form-input" name="weight" type="number" min="45" placeholder="65"></div>
+            <div><label class="form-label">Weight</label><input class="form-input" name="weight" type="number" min="45"
+                placeholder="65"></div>
           </div>
 
           <div id="receiverFields" class="form-row hidden">
             <div>
               <label class="form-label">Required Blood Type</label>
               <select class="form-select" name="requiredBloodType">
-                <option value="O+">O+</option><option value="O-">O-</option>
-                <option value="A+">A+</option><option value="A-">A-</option>
-                <option value="B+">B+</option><option value="B-">B-</option>
-                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
               </select>
             </div>
             <div>
               <label class="form-label">Urgency</label>
-              <select class="form-select" name="urgency"><option value="routine">Routine</option><option value="urgent">Urgent</option><option value="critical">Critical</option></select>
+              <select class="form-select" name="urgency">
+                <option value="routine">Routine</option>
+                <option value="urgent">Urgent</option>
+                <option value="critical">Critical</option>
+              </select>
             </div>
           </div>
 
           <div id="hospitalFields" class="form-row hidden">
             <div><label class="form-label">Hospital Name</label><input class="form-input" name="hospitalName"></div>
-            <div><label class="form-label">Registration Number</label><input class="form-input" name="registrationNumber"></div>
+            <div><label class="form-label">Registration Number</label><input class="form-input"
+                name="registrationNumber"></div>
           </div>
 
           <div id="bankFields" class="form-row hidden">
@@ -523,7 +767,7 @@
     const roles = {
       donor: {
         title: 'Blood Donor',
-        icon: 'ðŸ©¸',
+        icon: '\u2764\uFE0F',
         color: '#1D4ED8',
         dark: '#1E3A8A',
         eyebrow: 'Donor Access',
@@ -558,6 +802,35 @@
         mini: [['Stock', 'Blood unit inventory.'], ['Expiry', 'Use-soon risk view.'], ['Records', 'Collection and status entry.'], ['Network', 'Hospital supply sharing.']],
       },
     };
+
+    Object.assign(roles.donor, {
+      icon: '\u{1FA78}',
+      color: '#EF4444',
+      dark: '#B91C1C',
+      copy: 'Donate blood, track your donation history, and receive emergency requests near you.',
+      mini: [['Donate', 'Donation readiness and history.'], ['Alerts', 'Emergency requests near you.'], ['Impact', 'Lives helped over time.'], ['Care', 'Eligibility reminders.']],
+    });
+    Object.assign(roles.receiver, {
+      icon: '\u{1FA7A}',
+      color: '#8B5CF6',
+      dark: '#6D28D9',
+      copy: 'Request blood, track availability, and get AI-powered emergency assistance.',
+      mini: [['Request', 'Blood need and urgency profile.'], ['Track', 'Availability and status visibility.'], ['SOS', 'Emergency assistance tools.'], ['Network', 'Nearby supply signals.']],
+    });
+    Object.assign(roles.bloodbank, {
+      icon: '\u{1F3DB}\uFE0F',
+      color: '#10B981',
+      dark: '#059669',
+      copy: 'Manage inventory, process requests, and coordinate with hospitals.',
+      mini: [['Inventory', 'Blood unit stock view.'], ['Requests', 'Hospital demand queue.'], ['Expiry', 'Use-soon risk view.'], ['Network', 'Supply sharing.']],
+    });
+    Object.assign(roles.hospital, {
+      icon: '\u{1F3E5}',
+      color: '#F59E0B',
+      dark: '#B45309',
+      copy: 'Create emergency requests, dispatch donors, and manage patient blood needs.',
+      mini: [['Emergency', 'Critical request tools.'], ['Patients', 'Active blood needs.'], ['Dispatch', 'Ranked donor response.'], ['Inventory', 'Network supply view.']],
+    });
 
     function setMessage(text, ok = false) {
       message.textContent = text;
@@ -659,4 +932,5 @@
     });
   </script>
 </body>
+
 </html>

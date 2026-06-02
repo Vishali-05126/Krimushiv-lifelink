@@ -9,8 +9,8 @@ const fileAuthStore = require('../utils/fileAuthStore');
 
 const isDbReady = () => mongoose.connection.readyState === 1;
 
-// â”€â”€ GET /api/alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Fetch open alerts, optionally filtered by blood type or location
+// GET /api/alerts
+// Fetch open alerts, optionally filtered by blood type or location.
 router.get('/', protect, async (req, res) => {
   try {
     if (!isDbReady()) {
@@ -18,30 +18,26 @@ router.get('/', protect, async (req, res) => {
       return res.json({ alerts });
     }
 
-    const { bloodType, lat, lng, radius = 20000, ownOnly } = req.query; // radius in meters
-
+    const { bloodType, lat, lng, radius = 20000, ownOnly } = req.query;
     let query = {};
 
     if (ownOnly === 'true') {
-      // Hospitals see all their requests (open, accepted, fulfilled)
       query = { requestedBy: req.user._id };
     } else {
       query.status = 'open';
       query.expiresAt = { $gt: new Date() };
     }
 
-    if (bloodType) query.bloodType = { $in: [bloodType, 'O-'] }; // O- is universal
+    if (bloodType) query.bloodType = { $in: [bloodType, 'O-'] };
 
     let alerts;
-
     if (lat && lng) {
-      // Geo query â€” find alerts near user
       alerts = await Alert.find({
         ...query,
         'hospital.location': {
           $near: {
             $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-            $maxDistance: parseInt(radius),
+            $maxDistance: parseInt(radius, 10),
           },
         },
       })
@@ -61,27 +57,26 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-// â”€â”€ POST /api/alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Hospital or admin creates a new blood request alert
+// POST /api/alerts
+// Hospital or admin creates a new blood request alert.
 router.post('/', protect, async (req, res) => {
   try {
     const { type, severity, title, message, bloodType, unitsNeeded, hospital, location } = req.body;
-
     let alertHospital = hospital;
 
-    // For SOS alerts, find nearest hospital if not provided
     if (type === 'emergency_sos' && !hospital && location) {
       const Hospital = require('../models/Hospital');
       const nearest = await Hospital.findOne({
         location: {
           $near: {
             $geometry: { type: 'Point', coordinates: [location.lng, location.lat] },
-            $maxDistance: 20000, // 20km
+            $maxDistance: 20000,
           },
         },
         hasBloodBank: true,
         isOpen: true,
       });
+
       if (nearest) {
         alertHospital = {
           name: nearest.name,
@@ -95,11 +90,16 @@ router.post('/', protect, async (req, res) => {
     }
 
     const alert = await Alert.create({
-      type, severity, title, message, bloodType, unitsNeeded,
-      hospital: alertHospital, requestedBy: req.user._id,
+      type,
+      severity,
+      title,
+      message,
+      bloodType,
+      unitsNeeded,
+      hospital: alertHospital,
+      requestedBy: req.user._id,
     });
 
-    // Emit to all connected clients via Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.emit('new_alert', alert);
@@ -118,8 +118,8 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
-// â”€â”€ PUT /api/alerts/:id/accept â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Donor accepts a blood request
+// PUT /api/alerts/:id/accept
+// Donor accepts a blood request.
 router.put('/:id/accept', protect, async (req, res) => {
   try {
     if (req.user.role !== 'donor') {
@@ -132,6 +132,7 @@ router.put('/:id/accept', protect, async (req, res) => {
     if (!isDbReady()) {
       const alert = await fileAlertStore.mark(req.params.id, 'accepted', req.user);
       if (!alert) return res.status(404).json({ message: 'Alert not found' });
+
       const user = await fileAuthStore.recordAcceptedDonation(req.user._id || req.user.id, {
         donationsToAdd: 1,
         livesSavedToAdd: 3,
@@ -158,19 +159,16 @@ router.put('/:id/accept', protect, async (req, res) => {
       { new: true }
     );
 
-    // Notify all clients of the status change
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'accepted', acceptedBy: req.user.name });
-    return res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
 
-    res.json({ alert, message: 'Request accepted â€” navigate to hospital' });
+    res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// â”€â”€ PUT /api/alerts/:id/fulfill â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Mark donation as complete
+// PUT /api/alerts/:id/reject
 // Donor rejects a blood request because they are unavailable.
 router.put('/:id/reject', protect, async (req, res) => {
   try {
@@ -200,6 +198,8 @@ router.put('/:id/reject', protect, async (req, res) => {
   }
 });
 
+// PUT /api/alerts/:id/fulfill
+// Mark donation as complete.
 router.put('/:id/fulfill', protect, async (req, res) => {
   try {
     const alert = await Alert.findByIdAndUpdate(
@@ -207,18 +207,19 @@ router.put('/:id/fulfill', protect, async (req, res) => {
       { status: 'fulfilled' },
       { new: true }
     );
+    if (!alert) return res.status(404).json({ message: 'Alert not found' });
 
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'fulfilled' });
 
-    res.json({ alert, message: 'Donation confirmed â€” life saved!' });
+    res.json({ alert, message: 'Donation confirmed - life saved!' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// â”€â”€ GET /api/alerts/nearby-donors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Find verified donors near a hospital for a specific blood type
+// GET /api/alerts/nearby-donors
+// Find verified donors near a hospital for a specific blood type.
 router.get('/nearby-donors', protect, async (req, res) => {
   try {
     const { lat, lng, bloodType, radius = 10000, isEmergency = false } = req.query;
@@ -229,15 +230,14 @@ router.get('/nearby-donors', protect, async (req, res) => {
       location: {
         $near: {
           $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseInt(radius),
+          $maxDistance: parseInt(radius, 10),
         },
       },
     })
       .select('name bloodType donations location isAvailable status verifiedBadge lastDonation diseases hemoglobin healthScore')
-      .limit(100); // Get more for ranking
+      .limit(100);
 
-    // Calculate distance for each donor
-    const donorsWithDistance = donors.map(donor => {
+    const donorsWithDistance = donors.map((donor) => {
       const donorLng = donor.location.coordinates[0];
       const donorLat = donor.location.coordinates[1];
       const distance = getDistance(parseFloat(lat), parseFloat(lng), donorLat, donorLng);
@@ -258,16 +258,15 @@ router.get('/nearby-donors', protect, async (req, res) => {
   }
 });
 
-// Helper function to calculate distance between two points (Haversine formula)
 function getDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // Radius of the Earth in km
+  const earthRadiusKm = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return earthRadiusKm * c;
 }
 
 module.exports = router;
