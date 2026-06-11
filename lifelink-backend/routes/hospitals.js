@@ -22,6 +22,35 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ── GET /api/hospitals/geocode ───────────────
+// Proxy Google Maps geocoding (keeps API key server-side)
+router.get('/geocode/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return res.status(503).json({ message: 'Maps API not configured' });
+
+    const https = require('https');
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${apiKey}`;
+    const data = await new Promise((resolve, reject) => {
+      https.get(url, (resp) => {
+        let raw = '';
+        resp.on('data', (chunk) => { raw += chunk; });
+        resp.on('end', () => { try { resolve(JSON.parse(raw)); } catch (e) { reject(e); } });
+      }).on('error', reject);
+    });
+
+    if (data.results?.length) {
+      const { lat, lng } = data.results[0].geometry.location;
+      res.json({ lat, lng, formatted: data.results[0].formatted_address });
+    } else {
+      res.status(404).json({ message: 'Location not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── GET /api/hospitals/nearby ────────────────
 // Find hospitals near GPS coordinates
 router.get('/nearby', async (req, res) => {
@@ -106,29 +135,6 @@ router.put('/:id/status', protect, async (req, res) => {
     if (io) io.emit('hospital_status_updated', { hospitalId: req.params.id, isOpen, bedsAvailable });
 
     res.json({ hospital });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ── GET /api/hospitals/geocode ───────────────
-// Proxy Google Maps geocoding (keeps API key server-side)
-router.get('/geocode/search', async (req, res) => {
-  try {
-    const { q } = req.query;
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) return res.status(503).json({ message: 'Maps API not configured' });
-
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${apiKey}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.results?.length) {
-      const { lat, lng } = data.results[0].geometry.location;
-      res.json({ lat, lng, formatted: data.results[0].formatted_address });
-    } else {
-      res.status(404).json({ message: 'Location not found' });
-    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

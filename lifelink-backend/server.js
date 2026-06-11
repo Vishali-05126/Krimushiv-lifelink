@@ -36,12 +36,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../lifelink-frontend')));
 
 app.use((req, res, next) => {
-  // Block database-dependent API requests until MongoDB is connected.
   const isApiRequest = req.originalUrl.startsWith('/api');
   const isHealthCheck = req.originalUrl === '/api/health';
   const hasDemoFallback =
     (req.method === 'GET' && req.originalUrl === '/api/bloodbank/features') ||
-    (req.method === 'POST' && req.originalUrl === '/api/bloodbank/records');
+    (req.method === 'POST' && req.originalUrl === '/api/bloodbank/records') ||
+    (req.method === 'POST' && req.originalUrl === '/api/ai/triage') ||
+    (req.method === 'POST' && req.originalUrl === '/api/ai/donor-match-explain');
   const hasFileFallback = fileDbFallbackEnabled && (
     req.originalUrl.startsWith('/api/auth') ||
     req.originalUrl.startsWith('/api/alerts')
@@ -60,6 +61,7 @@ app.use('/api/alerts', require('./routes/alerts'));
 app.use('/api/hospitals', require('./routes/hospitals'));
 app.use('/api/insights', require('./routes/insights'));
 app.use('/api/bloodbank', require('./routes/bloodbank'));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api', require('./routes/match'));
 
 // â”€â”€ Health check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

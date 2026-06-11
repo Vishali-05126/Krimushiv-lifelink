@@ -7,812 +7,918 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #1d4ed8;
-      --primary-dark: #1e3a8a;
-      --primary-light: #3b82f6;
-      --primary-soft: #eff6ff;
-      --accent: #10b981;
-      --gold: #f59e0b;
-      --danger: #ef4444;
-      --text: #0f172a;
-      --text-soft: #475569;
-      --muted: #94a3b8;
-      --border: #dbeafe;
-      --bg: #f0f4ff;
-      --white: #fff;
-      --head: "Syne", sans-serif;
-      --body: "DM Sans", sans-serif;
-      --mono: "Space Mono", monospace;
+      --primary:#1d4ed8; --primary-dk:#1e3a8a; --primary-lt:#3b82f6; --primary-soft:#eff6ff;
+      --accent:#10b981;  --accent-dk:#059669;  --accent-soft:#d1fae5;
+      --cyan:#0891b2;    --cyan-soft:#ecfeff;
+      --gold:#f59e0b;    --text:#0f172a; --text-soft:#475569; --muted:#94a3b8;
+      --border:#dbeafe;  --bg:#f0f4ff;   --white:#fff;
+      --fh:"Syne",sans-serif; --fb:"DM Sans",sans-serif; --fm:"Space Mono",monospace;
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--body); overflow-x: hidden; }
-    .app { display: flex; min-height: 100vh; }
-    .side {
-      position: fixed;
-      inset: 0 auto 0 0;
-      width: 250px;
-      background: var(--white);
-      border-right: 1px solid var(--border);
-      box-shadow: 2px 0 12px rgba(29,78,216,0.06);
-      display: flex;
-      flex-direction: column;
-      z-index: 20;
-      overflow-y: auto;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--border);
-      font: 800 20px var(--head);
-      color: var(--primary);
-    }
-    .logo span { color: var(--accent); }
-    .logo-mark {
-      width: 32px; height: 32px; border-radius: 10px;
-      display: grid; place-items: center;
-      color: #fff; background: var(--primary);
-      font-size: 12px;
-      animation: pulseLogo 2s infinite;
-    }
-    .role-chip {
-      margin: 12px;
-      padding: 14px;
-      border-radius: 14px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      color: #fff;
-      background: linear-gradient(135deg, var(--role-color, var(--primary)), var(--role-dark, var(--primary-dark)));
-    }
-    .role-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,0.24);
-      display: grid; place-items: center;
-      font: 800 13px var(--head);
-      flex: 0 0 auto;
-    }
-    .role-name { font-weight: 800; font-size: 13px; }
-    .role-meta { font: 700 10px var(--mono); opacity: 0.8; text-transform: uppercase; margin-top: 2px; }
-    .nav-label {
-      padding: 14px 20px 6px;
-      color: var(--muted);
-      font: 700 9px var(--mono);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-    }
-    .nav-item {
-      width: 100%;
-      min-height: 40px;
-      border: 0;
-      border-left: 3px solid transparent;
-      background: transparent;
-      color: var(--text-soft);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 20px;
-      text-align: left;
-      font: 600 13px var(--body);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .nav-item:hover, .nav-item.active { background: var(--primary-soft); color: var(--primary); border-left-color: var(--primary); }
-    .nav-item:hover { transform: translateX(2px); }
-    .nav-icon { width: 20px; text-align: center; font-size: 15px; flex: 0 0 auto; }
-    .side-spacer { flex: 1; }
-    .switch-role, .logout {
-      margin: 12px;
-      min-height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-soft);
-      background: #f8faff;
-      font-weight: 800;
-      cursor: pointer;
-    }
-    .switch-role { margin-bottom: 0; }
-    .switch-role:hover, .logout:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
-    .topbar {
-      position: fixed;
-      top: 0; left: 250px; right: 0;
-      height: 60px;
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 1px 8px rgba(29,78,216,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 28px;
-      z-index: 10;
-    }
-    .topbar-title { font: 800 16px var(--head); }
-    .topbar-right { display: flex; align-items: center; gap: 10px; }
-    .sos {
-      border: 0;
-      border-radius: 8px;
-      background: var(--danger);
-      color: #fff;
-      padding: 9px 16px;
-      font: 800 12px var(--head);
-      cursor: pointer;
-      animation: pulseDanger 2.5s infinite;
-    }
-    .main {
-      margin-left: 250px;
-      margin-top: 60px;
-      min-height: calc(100vh - 60px);
-      width: calc(100% - 250px);
-      padding: 32px 36px 48px;
-    }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    .page-header { margin-bottom: 28px; }
-    .eyebrow {
-      color: var(--primary-light);
-      font: 700 10px var(--mono);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .page-title { margin: 0 0 6px; font: 800 clamp(28px, 3vw, 40px)/1.1 var(--head); }
-    .page-title span { color: var(--primary-light); }
-    .page-sub { margin: 0; color: var(--text-soft); max-width: 620px; line-height: 1.6; }
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card, .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    }
-    .stat-card:hover, .card:hover, .panel-card:hover { transform: translateY(-3px); box-shadow: 0 18px 42px rgba(29,78,216,0.1); border-color: #bfdbfe; }
-    .stat-card::after {
-      content: "";
-      position: absolute;
-      left: 0; right: 0; bottom: 0;
-      height: 3px;
-      background: var(--sc-color, var(--primary));
-    }
-    .stat-num { font: 800 32px var(--head); margin-bottom: 4px; }
-    .stat-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
-    .stat-note { margin-top: 6px; color: var(--text-soft); font-size: 12px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-    .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: start; }
-    .panel-card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      margin-bottom: 20px;
-      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    }
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-    .panel-head-title { font: 800 14px var(--head); }
-    .panel-body { padding: 20px; }
-    .badge {
-      border-radius: 999px;
-      padding: 4px 10px;
-      font: 700 10px var(--mono);
-      white-space: nowrap;
-    }
-    .badge-live { color: var(--accent); background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.26); }
-    .badge-urgent { color: var(--danger); background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.24); }
-    .badge-info { color: var(--primary); background: rgba(29,78,216,0.12); border: 1px solid rgba(29,78,216,0.18); }
-    .list-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f0f4ff; }
-    .list-item:last-child { border-bottom: 0; }
-    .li-icon {
-      width: 38px; height: 38px; border-radius: 12px;
-      display: grid; place-items: center;
-      background: var(--primary-soft);
-      color: var(--primary);
-      font: 800 12px var(--head);
-      flex: 0 0 auto;
-    }
-    .li-body { flex: 1; min-width: 0; }
-    .li-title { font-weight: 800; font-size: 13px; }
-    .li-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
-    .li-right { text-align: right; font: 700 12px var(--mono); flex: 0 0 auto; }
-    .form-group { margin-bottom: 16px; }
-    .form-label {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--text-soft);
-      font: 700 11px var(--mono);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-input, .form-select, textarea.form-input {
-      width: 100%;
-      min-height: 42px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: #f8faff;
-      color: var(--text);
-      font: 400 13px var(--body);
-      outline: none;
-    }
-    textarea.form-input { min-height: 92px; resize: vertical; }
-    .btn-primary, .btn-secondary, .btn-red, .btn-green {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 40px;
-      border-radius: 10px;
-      padding: 9px 16px;
-      font-weight: 800;
-      cursor: pointer;
-      border: 0;
-    }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-secondary { background: #f8faff; color: var(--text-soft); border: 1px solid var(--border); }
-    .btn-red { background: var(--danger); color: #fff; }
-    .btn-green { background: var(--accent); color: #fff; }
-    .btn-primary:hover, .btn-red:hover, .btn-green:hover { transform: scale(1.02); filter: brightness(1.04); }
-    .btn-secondary:hover { background: var(--primary-soft); color: var(--primary); }
-    .message { min-height: 20px; color: var(--danger); font-size: 13px; margin-top: 10px; }
-    .message.ok { color: var(--accent); }
-    .inv-row { display: grid; grid-template-columns: 46px 1fr 64px 82px; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f0f4ff; }
-    .inv-row:last-child { border-bottom: 0; }
-    .inv-type { font: 800 14px var(--head); }
-    .inv-bar-bg { height: 8px; border-radius: 999px; background: #f0f4ff; overflow: hidden; }
-    .inv-bar { height: 100%; border-radius: 999px; }
-    .inv-units { color: var(--muted); font: 700 12px var(--mono); text-align: right; }
-    .inv-status { border-radius: 5px; padding: 3px 7px; font-size: 10px; font-weight: 800; text-align: center; }
-    .st-ok { color: var(--accent); background: rgba(16,185,129,0.12); }
-    .st-low { color: var(--gold); background: rgba(245,158,11,0.12); }
-    .st-crit { color: var(--danger); background: rgba(239,68,68,0.12); }
-    .alert {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      padding: 14px 18px;
-      border-radius: 14px;
-      border: 1px solid rgba(239,68,68,0.2);
-      background: rgba(239,68,68,0.08);
-      color: #991b1b;
-      line-height: 1.45;
-    }
-    .map-block {
-      position: relative;
-      min-height: 260px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: linear-gradient(135deg, #dbeafe, #eff6ff);
-      border: 1px solid var(--border);
-    }
-    .map-block::before {
-      content: "";
-      position: absolute; inset: 0;
-      background-image: linear-gradient(rgba(29,78,216,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(29,78,216,0.08) 1px, transparent 1px);
-      background-size: 36px 36px;
-    }
-    .pin { position: absolute; transform: translate(-50%, -50%); z-index: 1; text-align: center; }
-    .pin-dot { width: 14px; height: 14px; border-radius: 50%; margin: 0 auto 4px; border: 2px solid #fff; box-shadow: 0 0 0 5px rgba(29,78,216,0.12); }
-    .pin-label { font: 700 10px var(--mono); background: #fff; border-radius: 5px; padding: 3px 6px; white-space: nowrap; }
-    @keyframes pulseLogo {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(29,78,216,0.35); }
-      50% { box-shadow: 0 0 0 8px rgba(29,78,216,0); }
-    }
-    @keyframes pulseDanger {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-      60% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-    }
-    @media (max-width: 900px) {
-      .app { display: block; }
-      .side { position: static; width: 100%; height: auto; }
-      .topbar { position: sticky; left: 0; top: 0; }
-      .main { margin: 0; width: 100%; padding: 24px 18px; }
-      .grid-2, .grid-1-2, .form-row { grid-template-columns: 1fr; }
-      .inv-row { grid-template-columns: 44px 1fr; }
-      .inv-units, .inv-status { text-align: left; }
-    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--fb);overflow-x:hidden}
+    button{cursor:pointer;font:inherit;border:0}
+    a{text-decoration:none}
+
+    /* ── TOPBAR ── */
+    .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:62px;background:var(--white);border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(29,78,216,0.07);display:flex;align-items:center;padding:0 20px;gap:0}
+    .nav-logo{display:flex;align-items:center;gap:9px;font:800 19px var(--fh);color:var(--primary);flex:0 0 auto;margin-right:20px}
+    .nav-logo em{color:var(--accent);font-style:normal}
+    .logo-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--primary-lt));display:grid;place-items:center;color:#fff;font-size:16px;animation:pulseLogo 2.4s infinite}
+    @keyframes pulseLogo{0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,0.35)}50%{box-shadow:0 0 0 7px rgba(29,78,216,0)}}
+    .nav-tabs{display:flex;align-items:center;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+    .nav-tabs::-webkit-scrollbar{display:none}
+    .nav-tab{display:flex;align-items:center;gap:6px;height:62px;padding:0 16px;border-bottom:3px solid transparent;background:transparent;color:var(--text-soft);font:600 13px var(--fb);white-space:nowrap;transition:color .18s,border-color .18s,background .18s}
+    .nav-tab:hover{color:var(--primary);background:var(--primary-soft)}
+    .nav-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:800}
+    .nav-right{display:flex;align-items:center;gap:10px;flex:0 0 auto;margin-left:12px}
+    .rt-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:rtPulse 1.8s infinite}
+    @keyframes rtPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+    .rt-label{font:700 10px var(--fm);color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+    .sos-btn{background:linear-gradient(135deg,var(--primary),var(--primary-lt));color:#fff;border-radius:9px;padding:8px 14px;font:800 12px var(--fh);animation:pulseSOS 2.5s infinite;transition:transform .15s,filter .15s}
+    .sos-btn:hover{transform:scale(1.06);filter:brightness(1.1)}
+    @keyframes pulseSOS{0%,100%{box-shadow:0 0 0 0 rgba(29,78,216,0.45)}60%{box-shadow:0 0 0 8px rgba(29,78,216,0)}}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 7px;background:linear-gradient(135deg,var(--role-color,var(--primary)),var(--role-dark,var(--primary-dk)));border-radius:999px;color:#fff;transition:transform .18s,box-shadow .18s;cursor:default}
+    .user-chip:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(29,78,216,0.28)}
+    .u-avatar{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.28);display:grid;place-items:center;font:800 11px var(--fh);flex:0 0 auto}
+    .u-name{font:800 12px var(--fh)}
+    .u-role{font:700 9px var(--fm);opacity:.8;text-transform:uppercase;letter-spacing:.4px}
+    .chip-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:7px;padding:4px 9px;font:700 10px var(--fh);transition:background .15s}
+    .chip-btn:hover{background:rgba(255,255,255,0.28)}
+
+    /* ── MAIN ── */
+    .main{margin-top:62px;min-height:calc(100vh - 62px);padding:28px 32px 56px;max-width:1280px;margin-left:auto;margin-right:auto}
+    .panel{display:none}.panel.active{display:block}
+
+    /* ── TYPOGRAPHY ── */
+    .eyebrow{color:var(--primary-lt);font:700 10px var(--fm);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+    .page-title{margin:0 0 6px;font:800 clamp(24px,3vw,36px)/1.1 var(--fh)}
+    .page-title span{color:var(--accent)}
+    .page-sub{margin:0;color:var(--text-soft);max-width:620px;line-height:1.6;font-size:14px}
+
+    /* ── STATS ── */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+    .stat-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
+    .stat-card:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(29,78,216,0.1);border-color:#bfdbfe}
+    .stat-card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--sc-color,var(--primary))}
+    .stat-num{font:800 28px var(--fh);margin-bottom:3px}
+    .stat-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:800}
+    .stat-note{margin-top:5px;color:var(--text-soft);font-size:11px}
+
+    /* ── GRID ── */
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;align-items:start}
+    .grid-1-2{display:grid;grid-template-columns:1fr 2fr;gap:18px;align-items:start}
+
+    /* ── CARDS ── */
+    .card{background:var(--white);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:18px;transition:transform .2s,box-shadow .2s,border-color .2s}
+    .card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,78,216,0.08);border-color:#bfdbfe}
+    .card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+    .card-title{font:800 13px var(--fh)}
+    .card-body{padding:18px}
+
+    /* ── BADGES ── */
+    .badge{border-radius:999px;padding:3px 9px;font:700 9px var(--fm);white-space:nowrap}
+    .badge-live{color:var(--accent);background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.26)}
+    .badge-urgent{color:var(--cyan);background:rgba(8,145,178,0.12);border:1px solid rgba(8,145,178,0.24)}
+    .badge-info{color:var(--primary);background:rgba(29,78,216,0.12);border:1px solid rgba(29,78,216,0.18)}
+    .badge-ok{color:var(--accent);background:var(--accent-soft)}
+
+    /* ── LIST ITEMS ── */
+    .li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f0f4ff}
+    .li:last-child{border-bottom:0}
+    .li-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);font:800 11px var(--fh);flex:0 0 auto}
+    .li-body{flex:1;min-width:0}
+    .li-title{font-weight:800;font-size:13px}
+    .li-sub{color:var(--muted);font-size:11px;margin-top:2px}
+    .li-right{text-align:right;font:700 11px var(--fm);flex:0 0 auto}
+
+    /* ── FORMS ── */
+    .fg{margin-bottom:14px}
+    .fl{display:block;margin-bottom:5px;color:var(--text-soft);font:700 10px var(--fm);text-transform:uppercase;letter-spacing:.5px}
+    .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .fi,.fs,textarea.fi{width:100%;min-height:40px;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;background:#f8faff;color:var(--text);font:400 13px var(--fb);outline:none;transition:border-color .18s,box-shadow .18s,background .18s}
+    .fi:hover,.fs:hover{border-color:var(--primary-lt);background:#fff}
+    .fi:focus,.fs:focus{border-color:var(--primary-lt);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+    textarea.fi{min-height:80px;resize:vertical}
+
+    /* ── BUTTONS ── */
+    .btn,.btn-sec,.btn-green,.btn-cyan{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;border-radius:10px;padding:8px 16px;font:800 12px var(--fh);cursor:pointer;border:0;transition:transform .17s,box-shadow .17s,filter .17s}
+    .btn{background:linear-gradient(135deg,var(--primary),var(--primary-lt));color:#fff;box-shadow:0 3px 10px rgba(29,78,216,0.22)}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(29,78,216,0.3);filter:brightness(1.05)}
+    .btn-green{background:linear-gradient(135deg,var(--accent),#34d399);color:#fff;box-shadow:0 3px 10px rgba(16,185,129,0.22)}
+    .btn-green:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,185,129,0.3)}
+    .btn-cyan{background:linear-gradient(135deg,var(--cyan),#06b6d4);color:#fff}
+    .btn-cyan:hover{transform:translateY(-2px);filter:brightness(1.08)}
+    .btn-sec{background:#f8faff;color:var(--text-soft);border:1px solid var(--border)}
+    .btn-sec:hover{background:var(--primary-soft);color:var(--primary);border-color:var(--primary-lt)}
+    .btn:disabled{opacity:.6;cursor:progress;transform:none;box-shadow:none}
+
+    /* ── MESSAGE ── */
+    .msg{min-height:16px;font-size:12px;margin-top:8px;transition:color .2s}
+    .msg.ok{color:var(--accent)}.msg.err{color:var(--cyan)}
+
+    /* ── INVENTORY ── */
+    .inv-row{display:grid;grid-template-columns:44px 1fr 58px 76px;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f4ff}
+    .inv-row:last-child{border-bottom:0}
+    .inv-type{font:800 13px var(--fh)}
+    .inv-bar-bg{height:7px;border-radius:999px;background:#f0f4ff;overflow:hidden}
+    .inv-bar{height:100%;border-radius:999px;transition:width .5s}
+    .inv-units{color:var(--muted);font:700 11px var(--fm);text-align:right}
+    .inv-status{border-radius:5px;padding:2px 6px;font-size:10px;font-weight:800;text-align:center}
+    .st-ok{color:var(--accent);background:rgba(16,185,129,0.12)}
+    .st-low{color:var(--gold);background:rgba(245,158,11,0.12)}
+    .st-crit{color:var(--primary);background:rgba(29,78,216,0.1)}
+
+    /* ── ALERT BANNER ── */
+    .banner{display:flex;gap:10px;margin-bottom:18px;padding:12px 16px;border-radius:13px;border:1px solid rgba(8,145,178,0.25);background:rgba(8,145,178,0.08);color:#0e7490;line-height:1.5;font-size:13px}
+
+    /* ── MAP BLOCK ── */
+    .map-block{position:relative;min-height:240px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid var(--border);cursor:pointer}
+    .map-block::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(29,78,216,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(29,78,216,0.07) 1px,transparent 1px);background-size:36px 36px}
+    .map-ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.55);backdrop-filter:blur(2px);opacity:0;transition:opacity .22s;z-index:3}
+    .map-block:hover .map-ov{opacity:1}
+    .map-ov strong{font:800 13px var(--fh);color:var(--primary)}
+    .map-ov small{font-size:11px;color:var(--text-soft)}
+    .pin{position:absolute;transform:translate(-50%,-50%);z-index:2;text-align:center}
+    .pin-dot{width:13px;height:13px;border-radius:50%;margin:0 auto 3px;border:2px solid #fff;box-shadow:0 0 0 4px rgba(29,78,216,0.12)}
+    .pin-label{font:700 9px var(--fm);background:#fff;border-radius:4px;padding:2px 5px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+
+    /* ── STEP ── */
+    .step{display:flex;gap:11px;align-items:flex-start}
+    .step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-lt));color:#fff;display:grid;place-items:center;font:800 11px var(--fh);flex:0 0 auto}
+    .step-title{font:800 13px var(--fh);margin-bottom:2px}
+    .step-desc{font-size:11px;color:var(--text-soft);line-height:1.5}
+
+    /* ── REALTIME TOAST ── */
+    #rt-toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+    .rt-toast-item{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:12px;padding:12px 16px;box-shadow:0 8px 24px rgba(29,78,216,0.15);font-size:13px;max-width:320px;animation:slideIn .3s ease;pointer-events:auto}
+    @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+    .rt-toast-title{font:800 13px var(--fh);margin-bottom:3px}
+    .rt-toast-close{float:right;background:none;color:var(--muted);font-size:16px;line-height:1;margin-left:8px;cursor:pointer}
+
+    /* ── PAGE HEADER ── */
+    .ph{margin-bottom:24px}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px){.main{padding:20px 14px 48px}.grid-2,.grid-3,.grid-1-2,.fr{grid-template-columns:1fr}.inv-row{grid-template-columns:40px 1fr}.inv-units,.inv-status{text-align:left}.u-name,.u-role{display:none}}
+    @media(max-width:600px){.topbar{padding:0 10px}.nav-tab{padding:0 10px;font-size:11px}.sos-btn{padding:7px 10px;font-size:11px}}
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="side">
-      <div class="logo"><div class="logo-mark">LL</div>Life<span>Link</span></div>
-      <div class="role-chip" id="roleChip">
-        <div class="role-avatar" id="roleInitials">LL</div>
-        <div><div class="role-name" id="sideName">Loading...</div><div class="role-meta" id="sideRole">Checking session</div></div>
-      </div>
-      <div class="nav-label">Workspace</div>
-      <nav id="nav"></nav>
-      <div class="side-spacer"></div>
-      <button class="switch-role" type="button" onclick="switchRole()">Switch Role</button>
-      <button class="logout" type="button" onclick="LL.logout()">Logout</button>
-    </aside>
 
-    <div class="page">
-      <header class="topbar">
-        <div class="topbar-title" id="pageTitle">Dashboard</div>
-        <div class="topbar-right">
-          <button class="sos" type="button" onclick="toast('SOS created', 'Emergency blood request tools are in your role workspace.')">SOS</button>
-        </div>
-      </header>
-      <main class="main" id="main">
-        <div class="panel active" id="panel-overview"></div>
-        <div class="panel" id="panel-workspace"></div>
-        <div class="panel" id="panel-inventory"></div>
-        <div class="panel" id="panel-ai"></div>
-      </main>
+<!-- ═══════ TOPBAR ═══════ -->
+<header class="topbar">
+  <a class="nav-logo" href="#">
+    <div class="logo-mark">🩸</div>Life<em>Link</em>
+  </a>
+  <nav class="nav-tabs" id="navTabs"></nav>
+  <div class="nav-right">
+    <div class="rt-dot" id="rtDot" title="Real-time connected"></div>
+    <span class="rt-label" id="rtLabel">Live</span>
+    <button class="sos-btn" id="sosBtn" type="button">🆘 SOS</button>
+    <div class="user-chip" id="userChip">
+      <div class="u-avatar" id="uAvatar">LL</div>
+      <div><div class="u-name" id="uName">Loading</div><div class="u-role" id="uRole">LifeLink</div></div>
+      <button class="chip-btn" onclick="LL.clearSession();location.href='./login.html'">Switch</button>
+      <button class="chip-btn" onclick="LL.logout()">Logout</button>
     </div>
   </div>
+</header>
 
-  <script src="./lifelink-api.js"></script>
-  <script>
-    LL.requireAuth();
+<!-- ═══════ PANELS ═══════ -->
+<main class="main" id="main"></main>
 
-    const state = { user: LL.getUser(), inventory: [], donors: [], alerts: [] };
-    const navHost = document.getElementById('nav');
-    const panels = ['overview', 'workspace', 'inventory', 'ai'];
+<!-- ═══════ RT TOASTS ═══════ -->
+<div id="rt-toast"></div>
 
-    const roles = {
-      donor: { label: 'Blood Donor', color: '#1d4ed8', dark: '#1e3a8a', avatar: 'BD' },
-      receiver: { label: 'Receiver', color: '#10b981', dark: '#047857', avatar: 'RC' },
-      hospital: { label: 'Hospital', color: '#f59e0b', dark: '#b45309', avatar: 'HP' },
-      bloodbank: { label: 'Blood Bank', color: '#8b5cf6', dark: '#6d28d9', avatar: 'BB' },
-      admin: { label: 'Admin', color: '#475569', dark: '#0f172a', avatar: 'AD' },
-    };
+<script src="./lifelink-api.js"></script>
+<script>
+LL.requireAuth();
 
-    function roleLabel(role) {
-      return roles[role]?.label || 'LifeLink';
+/* ═══════════════════════════════════════════
+   STATE & CONSTANTS
+═══════════════════════════════════════════ */
+const S = { user: null, inventory: [], donors: [], alerts: [], socket: null };
+
+const ROLE_META = {
+  donor:     { label:'Blood Donor', color:'#1d4ed8', dark:'#1e3a8a', av:'BD' },
+  receiver:  { label:'Receiver',    color:'#0891b2', dark:'#0e7490', av:'RC' },
+  hospital:  { label:'Hospital',    color:'#0369a1', dark:'#075985', av:'HP' },
+  bloodbank: { label:'Blood Bank',  color:'#10b981', dark:'#059669', av:'BB' },
+  admin:     { label:'Admin',       color:'#475569', dark:'#0f172a', av:'AD' },
+};
+
+// Role-specific tabs — only what each role needs
+const ROLE_TABS = {
+  donor:     [{id:'home',label:'🏠 Home'},{id:'requests',label:'🩸 Blood Requests'},{id:'history',label:'📋 My History'}],
+  receiver:  [{id:'home',label:'🏠 Home'},{id:'find',label:'🔍 Find Blood'},{id:'request',label:'📝 Request Blood'}],
+  hospital:  [{id:'home',label:'🏠 Home'},{id:'dispatch',label:'🚑 Dispatch'},{id:'inventory',label:'🏥 Inventory'},{id:'alerts',label:'⚠️ Create Alert'}],
+  bloodbank: [{id:'home',label:'🏠 Home'},{id:'stock',label:'📦 Stock'},{id:'records',label:'💉 Add Record'},{id:'expiry',label:'⏳ Expiry Watch'}],
+};
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function initials(n='LL'){return n.trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase()||'LL'}
+function rlabel(r){return ROLE_META[r]?.label||'LifeLink'}
+function mapsUrl(lat,lng,q){return (lat&&lng)?`https://www.google.com/maps?q=${lat},${lng}&z=15`:`https://www.google.com/maps/search/${encodeURIComponent(q||'blood bank near me')}`}
+
+function toast(title, body='', color='var(--primary)'){
+  const box=document.getElementById('rt-toast');
+  const el=document.createElement('div');
+  el.className='rt-toast-item';
+  el.style.borderLeftColor=color;
+  el.innerHTML=`<button class="rt-toast-close" onclick="this.parentElement.remove()">×</button><div class="rt-toast-title">${esc(title)}</div><div style="color:var(--text-soft)">${esc(body)}</div>`;
+  box.appendChild(el);
+  setTimeout(()=>el.remove(),6000);
+}
+
+function setMsg(id,text,type=''){
+  const el=document.getElementById(id);
+  if(el){el.textContent=text;el.className='msg '+(text?type:'')}
+}
+
+/* ═══════════════════════════════════════════
+   REALTIME — SOCKET.IO
+═══════════════════════════════════════════ */
+function initSocket(){
+  if(typeof io==='undefined') return;
+  const socket = io(LL.origin, { transports:['websocket','polling'] });
+  S.socket = socket;
+
+  socket.on('connect', ()=>{
+    document.getElementById('rtDot').style.background='var(--accent)';
+    document.getElementById('rtLabel').textContent='Live';
+    const city = S.user?.location?.city;
+    if(city) socket.emit('join_city', city);
+  });
+
+  socket.on('disconnect',()=>{
+    document.getElementById('rtDot').style.background='var(--muted)';
+    document.getElementById('rtLabel').textContent='Offline';
+  });
+
+  // New blood alert — show to donors
+  socket.on('new_alert', alert=>{
+    if(S.user?.role==='donor'){
+      toast('🩸 New Blood Request', `${alert.bloodType||''} needed at ${alert.hospital?.name||'hospital'}`, 'var(--primary)');
+      if(document.getElementById('panel-requests')?.classList.contains('active')) loadDonorRequests();
     }
+    if(S.user?.role==='hospital'||S.user?.role==='bloodbank') toast('📢 Alert Created', alert.title||'New blood request');
+  });
 
-    function initials(name = 'LifeLink') {
-      return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+  // Alert status update
+  socket.on('alert_updated', data=>{
+    toast('✅ Alert Updated', `Status: ${data.status}`, 'var(--accent)');
+    if(S.user?.role==='donor') loadDonorRequests();
+  });
+
+  // Blood stock update
+  socket.on('blood_stock_updated', data=>{
+    toast('📦 Stock Updated', `Hospital inventory changed`, 'var(--cyan)');
+    if(document.getElementById('panel-stock')?.classList.contains('active')) loadInventory();
+  });
+
+  // Emergency broadcast
+  socket.on('emergency_alert', data=>{
+    toast('🚨 EMERGENCY', `${data.bloodType||''} urgently needed`, 'var(--cyan)');
+  });
+
+  // Donor status change
+  socket.on('donor_status_changed', data=>{
+    if(data.userId===S.user?.id||data.userId===S.user?._id){
+      toast('👤 Status Changed', data.status);
     }
+  });
+}
 
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
-    }
+/* ═══════════════════════════════════════════
+   NAV & PANEL SWITCH
+═══════════════════════════════════════════ */
+function buildNav(user){
+  const tabs = ROLE_TABS[user.role] || ROLE_TABS.donor;
+  const nav  = document.getElementById('navTabs');
+  nav.innerHTML = tabs.map((t,i)=>`
+    <button class="nav-tab ${i===0?'active':''}" data-panel="${t.id}" type="button">${t.label}</button>
+  `).join('');
+  nav.querySelectorAll('.nav-tab').forEach(b=>b.addEventListener('click',()=>switchPanel(b.dataset.panel)));
 
-    function setNav(user) {
-      const workspaceLabel = {
-        donor: 'Donation Readiness',
-        receiver: 'Request Monitor',
-        hospital: 'Operations Center',
-        bloodbank: 'Stock Control',
-      }[user.role] || `${roleLabel(user.role)} Workspace`;
-      const inventoryLabel = user.role === 'bloodbank' ? 'Expiry & Inventory' : 'Blood Availability';
-      const aiLabel = user.role === 'hospital' ? 'Donor Dispatch' : 'AI Dispatch';
-      const items = [
-        { id: 'overview', icon: '◆', label: 'Overview' },
-        { id: 'workspace', icon: '●', label: workspaceLabel },
-        { id: 'inventory', icon: '■', label: inventoryLabel },
-        { id: 'ai', icon: '▲', label: aiLabel },
-      ];
-      navHost.innerHTML = items.map((item, index) => `
-        <button class="nav-item ${index === 0 ? 'active' : ''}" type="button" data-panel="${item.id}">
-          <span class="nav-icon">${item.icon}</span>${item.label}
-        </button>
-      `).join('');
-      navHost.querySelectorAll('.nav-item').forEach((button) => button.addEventListener('click', () => switchPanel(button.dataset.panel)));
-    }
+  // Build panel containers
+  const main = document.getElementById('main');
+  main.innerHTML = tabs.map((t,i)=>`<div class="panel ${i===0?'active':''}" id="panel-${t.id}"></div>`).join('');
+}
 
-    function switchPanel(id) {
-      panels.forEach((panel) => document.getElementById(`panel-${panel}`).classList.toggle('active', panel === id));
-      navHost.querySelectorAll('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.panel === id));
-      document.getElementById('pageTitle').textContent = navHost.querySelector(`[data-panel="${id}"]`)?.textContent.trim().replace(/^\d+/, '').trim() || 'Dashboard';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+function switchPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${id}`));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+  // Lazy-load panel content
+  const role = S.user?.role;
+  if(role==='donor'){
+    if(id==='requests') loadDonorRequests();
+    if(id==='history')  renderDonorHistory();
+  }
+  if(role==='receiver'){
+    if(id==='find') renderReceiverFind();
+  }
+  if(role==='hospital'){
+    if(id==='dispatch')  loadHospitalDispatch();
+    if(id==='inventory') loadInventory('panel-inventory');
+  }
+  if(role==='bloodbank'){
+    if(id==='stock')  loadInventory('panel-stock');
+    if(id==='expiry') renderExpiryWatch();
+  }
+}
 
-    function initialPanel(user) {
-      const hash = window.location.hash.replace('#', '');
-      if (panels.includes(hash)) return hash;
-      if (hash === user.role) return 'workspace';
-      return 'overview';
-    }
+/* ═══════════════════════════════════════════
+   SHELL
+═══════════════════════════════════════════ */
+function renderShell(user){
+  S.user = user;
+  const rm = ROLE_META[user.role]||ROLE_META.admin;
+  const chip = document.getElementById('userChip');
+  chip.style.setProperty('--role-color', rm.color);
+  chip.style.setProperty('--role-dark',  rm.dark);
+  document.getElementById('uAvatar').textContent = initials(user.name);
+  document.getElementById('uName').textContent   = user.name||'User';
+  document.getElementById('uRole').textContent   = rlabel(user.role);
 
-    function renderShell(user) {
-      state.user = user;
-      const role = roles[user.role] || roles.admin;
-      document.getElementById('roleChip').style.setProperty('--role-color', role.color);
-      document.getElementById('roleChip').style.setProperty('--role-dark', role.dark);
-      document.getElementById('sideName').textContent = user.name || 'LifeLink User';
-      document.getElementById('sideRole').textContent = roleLabel(user.role);
-      document.getElementById('roleInitials').textContent = role.avatar || initials(user.name);
-      setNav(user);
-      renderOverview(user);
-      renderWorkspace(user);
-      renderAI();
-      switchPanel(initialPanel(user));
-      if (user.role === 'donor') loadDonorAlerts();
-    }
+  const loc = user.location?.coordinates||[];
+  document.getElementById('sosBtn').onclick = ()=>
+    window.open(mapsUrl(loc[1],loc[0],'blood bank emergency near me'),'_blank');
 
-    function renderOverview(user) {
-      const blood = user.bloodType || user.requiredBloodType || 'N/A';
-      const roleName = roleLabel(user.role);
-      const title = {
-        donor: 'Donation readiness and live alerts',
-        receiver: 'Blood request tracking',
-        hospital: 'Emergency operations center',
-        bloodbank: 'Inventory and expiry control',
-      }[user.role] || 'LifeLink command center';
-      document.getElementById('panel-overview').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">${escapeHtml(roleName)} Dashboard</div>
-          <h1 class="page-title">${escapeHtml(title)} <span>online</span></h1>
-          <p class="page-sub">${escapeHtml(user.name || 'Your account')} is connected to the LifeLink network. Use the workspace tabs to manage role-specific tools.</p>
-        </div>
-        <div class="stats-row">
-          <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${escapeHtml(roleName)}</div><div class="stat-label">Role</div><div class="stat-note">${escapeHtml(user.email || '')}</div></div>
-          <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${escapeHtml(blood)}</div><div class="stat-label">Blood Type</div><div class="stat-note">Used for matching and supply visibility.</div></div>
-          <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num">${user.role === 'donor' ? escapeHtml(user.status || 'available') : 'Live'}</div><div class="stat-label">${user.role === 'donor' ? 'Donor Status' : 'Network Status'}</div><div class="stat-note">${user.role === 'donor' ? escapeHtml(LL.donationStatus(user.lastDonation)) : 'Connected through the LifeLink API.'}</div></div>
-        </div>
-        <div class="grid-2">
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Network Snapshot</span><span class="badge badge-live">Live</span></div>
-            <div class="panel-body">
-              ${networkItems().map(item => listItem(item.type, item.title, item.sub, item.right)).join('')}
-            </div>
+  buildNav(user);
+  renderHome(user);        // always render home first
+}
+
+/* ═══════════════════════════════════════════
+   ── DONOR DASHBOARD ──
+═══════════════════════════════════════════ */
+function renderHome(user){
+  const role = user.role;
+  if(role==='donor')     return renderDonorHome(user);
+  if(role==='receiver')  return renderReceiverHome(user);
+  if(role==='hospital')  return renderHospitalHome(user);
+  if(role==='bloodbank') return renderBankHome(user);
+}
+
+function renderDonorHome(u){
+  const loc = u.location?.coordinates||[];
+  const lat=loc[1]||13.0827, lng=loc[0]||80.2707;
+  document.getElementById('panel-home').innerHTML=`
+    <div class="ph">
+      <div class="eyebrow">Blood Donor</div>
+      <h1 class="page-title">Hi, <span>${esc(u.name?.split(' ')[0]||'Donor')}</span> 👋</h1>
+      <p class="page-sub">${esc(u.email)} · Blood type: <strong>${esc(u.bloodType||'N/A')}</strong></p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${u.donations||0}</div><div class="stat-label">Donations</div><div class="stat-note">${u.livesSaved||0} lives saved</div></div>
+      <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${esc(u.bloodType||'N/A')}</div><div class="stat-label">Blood Group</div><div class="stat-note">Eligible types shown in requests</div></div>
+      <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num">${esc(u.status||'available')}</div><div class="stat-label">Status</div><div class="stat-note">${esc(LL.donationStatus(u.lastDonation))}</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">📍 Your Location</span><span class="badge badge-info">Maps</span></div>
+        <div class="card-body">
+          <div class="map-block" onclick="window.open('${mapsUrl(lat,lng,u.name+' blood donor')}','_blank')">
+            <div class="map-ov"><strong>🗺 Open Google Maps</strong><small>${esc(u.name)} · Blood Donor</small></div>
+            <div class="pin" style="left:50%;top:52%"><div class="pin-dot" style="background:#1d4ed8"></div><div class="pin-label">📍 ${esc(u.name||'You')} · ${esc(u.bloodType||'Donor')}</div></div>
+            <div class="pin" style="left:28%;top:35%"><div class="pin-dot" style="background:#10b981"></div><div class="pin-label">Donor nearby</div></div>
+            <div class="pin" style="left:70%;top:30%"><div class="pin-dot" style="background:#0891b2"></div><div class="pin-label">Blood Bank</div></div>
           </div>
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Coverage Map</span><span class="badge badge-info">City View</span></div>
-            <div class="panel-body">
-              <div class="map-block">
-                <div class="pin" style="left:50%;top:55%"><div class="pin-dot" style="background:#f59e0b"></div><div class="pin-label">You</div></div>
-                <div class="pin" style="left:28%;top:32%"><div class="pin-dot" style="background:#10b981"></div><div class="pin-label">Donor 22m</div></div>
-                <div class="pin" style="left:72%;top:28%"><div class="pin-dot" style="background:#1d4ed8"></div><div class="pin-label">Bank 15m</div></div>
-              </div>
-            </div>
+          <p style="margin-top:8px;font-size:12px"><a href="${mapsUrl(lat,lng,'blood donation centre near me')}" target="_blank" style="color:var(--primary);font-weight:700">🔗 Find donation centres near you</a></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">📋 How to Donate</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+          ${step(1,'Go to Blood Requests tab','View emergency blood needs near you matching your blood type.')}
+          ${step(2,'Accept a Request','Tap Accept — you will be marked as en route.')}
+          ${step(3,'Head to the Hospital','Open the map link to navigate to the hospital.')}
+          ${step(4,'Donate at the hospital','Staff will confirm your donation — your count updates automatically.')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadDonorRequests(){
+  const el = document.getElementById('panel-requests');
+  if(!el) return;
+  el.innerHTML=`<div class="ph"><div class="eyebrow">Blood Donor</div><h1 class="page-title">🩸 Blood <span>Requests</span></h1><p class="page-sub">Open emergency requests near you that match your blood type.</p></div><p class="page-sub" style="padding:20px">Loading nearby requests...</p>`;
+  try{
+    const coords = S.user.location?.coordinates||[];
+    const data = await LL.loadAlerts({bloodType:S.user.bloodType, lng:coords[0], lat:coords[1]});
+    const alerts = data.alerts||[];
+    el.innerHTML=`
+      <div class="ph"><div class="eyebrow">Blood Donor</div><h1 class="page-title">🩸 Blood <span>Requests</span></h1><p class="page-sub">${alerts.length} open request(s) matching your blood type.</p></div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Open Requests</span><span class="badge badge-live">Real-Time</span></div>
+        <div class="card-body" id="requestList">
+          ${alerts.length ? alerts.map(alertRow).join('') : '<p class="page-sub">No matching requests right now. Check back soon.</p>'}
+        </div>
+      </div>
+      <p class="msg" id="acceptMsg"></p>
+    `;
+  }catch(e){
+    el.innerHTML=`<p class="msg err" style="padding:20px">${esc(e.message)}</p>`;
+  }
+}
+
+function alertRow(a){
+  const coords=a.hospital?.location?.coordinates||[];
+  const lat=coords[1], lng=coords[0];
+  const locTxt=(lat&&lng)?`${Number(lat).toFixed(3)}, ${Number(lng).toFixed(3)}`:(a.hospital?.address||'Location on accept');
+  const mapLink=(lat&&lng)?mapsUrl(lat,lng,a.hospital?.name):'#';
+  const id=esc(a._id||a.id||'');
+  const sev=a.severity||'info';
+  const sevColor=sev==='critical'?'var(--cyan)':sev==='warning'?'var(--gold)':'var(--accent)';
+  return `
+    <div class="li">
+      <div class="li-icon" style="background:${sev==='critical'?'var(--cyan-soft)':'var(--primary-soft)'};color:${sevColor}">${esc(a.bloodType||'?')}</div>
+      <div class="li-body">
+        <div class="li-title">${esc(a.title||'Blood request')}</div>
+        <div class="li-sub">${esc(a.message||'')} · ${esc(a.unitsNeeded||1)} unit(s)</div>
+        <div class="li-sub">🏥 ${esc(a.hospital?.name||'Hospital')} · <a href="${mapLink}" target="_blank" style="color:var(--primary);font-weight:700">${esc(locTxt)}</a></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <button class="btn-green" style="font-size:11px;padding:6px 11px" onclick="acceptAlert('${id}')">✅ Accept</button>
+        <button class="btn-sec"   style="font-size:10px;padding:4px 9px"  onclick="window.open('${mapLink}','_blank')">🗺 Map</button>
+      </div>
+    </div>
+  `;
+}
+
+async function acceptAlert(id){
+  if(!id) return;
+  setMsg('acceptMsg','Accepting...','');
+  try{
+    const data = await LL.acceptAlert(id);
+    setMsg('acceptMsg', data.message||'Accepted!','ok');
+    if(data.user){ S.user=data.user; LL.setSession({user:data.user}); renderShell(data.user); }
+    toast('✅ Request Accepted','Head to the hospital. Your donation will be recorded on completion.','var(--accent)');
+    loadDonorRequests();
+  }catch(e){ setMsg('acceptMsg',e.message,'err'); }
+}
+
+function renderDonorHistory(){
+  const u=S.user;
+  document.getElementById('panel-history').innerHTML=`
+    <div class="ph"><div class="eyebrow">Blood Donor</div><h1 class="page-title">My <span>History</span></h1><p class="page-sub">Your donation record and impact.</p></div>
+    <div class="stats-row">
+      <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${u.donations||0}</div><div class="stat-label">Total Donations</div></div>
+      <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${u.livesSaved||0}</div><div class="stat-label">Lives Saved</div></div>
+      <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num">${esc(LL.formatDate(u.lastDonation))}</div><div class="stat-label">Last Donation</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Eligibility Status</span><span class="badge ${(u.lastDonation&&LL.daysSince(u.lastDonation)<90)?'badge-urgent':'badge-ok'}">${(u.lastDonation&&LL.daysSince(u.lastDonation)<90)?'Resting':'Eligible'}</span></div>
+      <div class="card-body">
+        <p class="page-sub">${esc(LL.donationStatus(u.lastDonation))}</p>
+        <br>
+        ${li('🩸','Blood Type',esc(u.bloodType||'N/A'),'')}
+        ${li('📅','Last Donation',esc(LL.formatDate(u.lastDonation)),'')}
+        ${li('❤️','Organ Donor',u.organDonor?'Yes — pledged':'Not pledged','')}
+      </div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   ── RECEIVER DASHBOARD ──
+═══════════════════════════════════════════ */
+function renderReceiverHome(u){
+  const loc=u.location?.coordinates||[];
+  document.getElementById('panel-home').innerHTML=`
+    <div class="ph"><div class="eyebrow">Receiver</div><h1 class="page-title">Hi, <span>${esc(u.name?.split(' ')[0]||'there')}</span></h1><p class="page-sub">Track your blood need and find available donors.</p></div>
+    <div class="stats-row">
+      <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${esc(u.requiredBloodType||'N/A')}</div><div class="stat-label">Required Blood</div></div>
+      <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num">${esc(u.urgency||'routine')}</div><div class="stat-label">Urgency</div></div>
+      <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${esc(u.attendingHospital||'N/A')}</div><div class="stat-label">Hospital</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Your Profile</span></div>
+        <div class="card-body">
+          ${li('🩸','Required Blood',esc(u.requiredBloodType||'N/A'),'')}
+          ${li('🏥','Attending Hospital',esc(u.attendingHospital||'Not set'),'')}
+          ${li('⚡','Urgency',esc(u.urgency||'routine'),'')}
+          ${li('👤','Guardian',esc(u.guardianName||'Not provided'),'')}
+          ${li('🏠','Medical Condition',esc(u.medicalCondition||'Not provided'),'')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Quick Actions</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn" onclick="switchPanel('find')" style="width:100%">🔍 Find Blood Donors</button>
+          <button class="btn-cyan" onclick="switchPanel('request')" style="width:100%">📝 Create Blood Request</button>
+          <button class="btn-sec" onclick="window.open('${mapsUrl(loc[1],loc[0],'blood bank near me')}','_blank')" style="width:100%">🗺 Find Blood Banks on Maps</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderReceiverFind(){
+  const u=S.user;
+  const el=document.getElementById('panel-find');
+  el.innerHTML=`
+    <div class="ph"><div class="eyebrow">Receiver</div><h1 class="page-title">🔍 Find <span>Blood</span></h1><p class="page-sub">Search for available donors and blood banks near you.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Search Donors</span></div>
+        <div class="card-body">
+          <div class="fg"><label class="fl">Blood Type</label>
+            <select class="fs" id="findBT">
+              ${['O-','O+','A+','A-','B+','B-','AB+','AB-'].map(t=>`<option${t===(u.requiredBloodType||'O-')?' selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+          <button class="btn" style="width:100%" onclick="runReceiverSearch()">🔍 Search Now</button>
+          <div id="findResults" style="margin-top:14px"><p class="page-sub">Click search to find matching donors.</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">📍 Nearby Blood Banks</span><span class="badge badge-info">Maps</span></div>
+        <div class="card-body">
+          <p class="page-sub" style="margin-bottom:12px">Click the map to find blood banks near your location.</p>
+          <div class="map-block" onclick="window.open('${mapsUrl(u.location?.coordinates?.[1],u.location?.coordinates?.[0],'blood bank near me')}','_blank')">
+            <div class="map-ov"><strong>🗺 Open Google Maps</strong><small>Blood banks near you</small></div>
+            <div class="pin" style="left:50%;top:52%"><div class="pin-dot" style="background:#0891b2"></div><div class="pin-label">📍 You</div></div>
+            <div class="pin" style="left:30%;top:35%"><div class="pin-dot" style="background:#10b981"></div><div class="pin-label">Blood Bank</div></div>
+            <div class="pin" style="left:68%;top:40%"><div class="pin-dot" style="background:#1d4ed8"></div><div class="pin-label">Hospital</div></div>
           </div>
         </div>
-      `;
-    }
+      </div>
+    </div>
+  `;
+}
 
-    function networkItems() {
-      return [
-        { type: 'O-', title: 'Critical O- request', sub: 'ICU road accident case, 2 units needed', right: '22m' },
-        { type: 'A+', title: 'Matched donor en route', sub: 'Emergency surgery request', right: '35m' },
-        { type: 'BB', title: 'City Blood Center', sub: 'Inventory shared with network', right: '74u' },
-      ];
-    }
-
-    function listItem(icon, title, sub, right) {
-      return `
-        <div class="list-item">
-          <div class="li-icon">${escapeHtml(icon)}</div>
-          <div class="li-body"><div class="li-title">${escapeHtml(title)}</div><div class="li-sub">${escapeHtml(sub)}</div></div>
-          <div class="li-right">${escapeHtml(right)}</div>
-        </div>
-      `;
-    }
-
-    function renderWorkspace(user) {
-      if (user.role === 'donor') return renderDonor(user);
-      if (user.role === 'receiver') return renderReceiver(user);
-      if (user.role === 'hospital') return renderHospital(user);
-      if (user.role === 'bloodbank') return renderBloodBank(user);
-      renderHospital(user);
-    }
-
-    function renderDonor(user) {
-      document.getElementById('panel-workspace').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">Donor Workspace</div>
-          <h1 class="page-title">Donation <span>Readiness</span></h1>
-          <p class="page-sub">Keep your availability and last donation current so emergency matches stay accurate.</p>
-        </div>
-        <div class="stats-row">
-          <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${user.donations || 0}</div><div class="stat-label">Donations</div></div>
-          <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${user.livesSaved || 0}</div><div class="stat-label">Lives Saved</div></div>
-          <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num">${escapeHtml(user.bloodType || 'N/A')}</div><div class="stat-label">Blood Group</div></div>
-        </div>
-        <div class="grid-2">
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Live Blood Need Notifications</span><span class="badge badge-live">Nearby</span></div>
-            <div class="panel-body">
-              <div id="donorAlerts" class="li-sub">Checking nearby requests...</div>
-              <p class="message" id="alertMessage"></p>
-            </div>
-          </div>
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Record Donation</span></div>
-            <div class="panel-body">
-              <form id="donationForm">
-                <div class="form-group"><label class="form-label">Donation Date</label><input class="form-input" name="donationDate" type="date" required></div>
-                <div class="form-group"><label class="form-label">Lives Saved Estimate</label><input class="form-input" name="livesSavedToAdd" type="number" min="1" value="3"></div>
-                <button class="btn-primary" type="submit" style="width:100%">Record Donation</button>
-              </form>
-              <p class="message" id="donationMessage"></p>
-            </div>
-          </div>
-        </div>
-      `;
-      document.getElementById('donationForm').addEventListener('submit', submitDonation);
-    }
-
-    function renderReceiver(user) {
-      document.getElementById('panel-workspace').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">Receiver Workspace</div>
-          <h1 class="page-title">Blood Request <span>Monitor</span></h1>
-          <p class="page-sub">Track the need profile, urgency, and nearby network visibility.</p>
-        </div>
-        <div class="stats-row">
-          <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${escapeHtml(user.requiredBloodType || 'N/A')}</div><div class="stat-label">Required Blood</div></div>
-          <div class="stat-card" style="--sc-color:#ef4444"><div class="stat-num">${escapeHtml(user.urgency || 'routine')}</div><div class="stat-label">Urgency</div></div>
-          <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${escapeHtml(user.attendingHospital || 'N/A')}</div><div class="stat-label">Hospital</div></div>
-        </div>
-        <div class="grid-2">
-          <div class="panel-card"><div class="panel-head"><span class="panel-head-title">Essential Actions</span></div><div class="panel-body"><p class="page-sub">Review available inventory, then use AI Dispatch to rank emergency matches.</p><br><button class="btn-primary" onclick="switchPanel('inventory')">Check Inventory</button> <button class="btn-secondary" onclick="switchPanel('ai')">Open Dispatch</button></div></div>
-          <div class="panel-card"><div class="panel-head"><span class="panel-head-title">Care Notes</span></div><div class="panel-body">${listItem('MD', 'Medical condition', user.medicalCondition || 'Not provided', 'Info')}${listItem('GN', 'Guardian', user.guardianName || 'Not provided', 'Contact')}</div></div>
-        </div>
-      `;
-    }
-
-    function renderHospital(user) {
-      document.getElementById('panel-workspace').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">Hospital Operations</div>
-          <h1 class="page-title">Operations <span>Center</span></h1>
-          <p class="page-sub">${escapeHtml(user.hospitalName || user.name || 'Hospital')} real-time blood coordination.</p>
-        </div>
-        <div class="alert"><strong>2 critical cases</strong><span> requiring O- and A+ blood. Dispatch ranking is ready in the AI tab.</span></div>
-        <div class="stats-row">
-          <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num">5</div><div class="stat-label">Active Requests</div><div class="stat-note">2 critical</div></div>
-          <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">3</div><div class="stat-label">Donors En Route</div><div class="stat-note">Avg 28 min ETA</div></div>
-          <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${user.hasBloodBank ? 'Yes' : 'No'}</div><div class="stat-label">Blood Bank</div></div>
-        </div>
-        <div class="grid-2">
-          <div class="panel-card"><div class="panel-head"><span class="panel-head-title">Active Emergency Requests</span><span class="badge badge-urgent">Critical</span></div><div class="panel-body">${networkItems().map(item => listItem(item.type, item.title, item.sub, item.right)).join('')}<button class="btn-red" style="width:100%;margin-top:14px" onclick="toast('Request active', 'Emergency blood request broadcast to nearby donors and blood banks.')">New Emergency Request</button></div></div>
-          <div class="panel-card"><div class="panel-head"><span class="panel-head-title">Hospital Profile</span></div><div class="panel-body">${listItem('HP', user.hospitalName || user.name, user.registrationNumber || 'Registration not provided', user.hospitalType || 'Type')}${listItem('TX', 'Trauma centre', user.isTraumaCentre ? 'Available' : 'Not marked', user.isTraumaCentre ? 'Yes' : 'No')}</div></div>
-        </div>
-      `;
-    }
-
-    function renderBloodBank(user) {
-      document.getElementById('panel-workspace').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">Blood Bank Operations</div>
-          <h1 class="page-title">Collection and <span>Expiry</span></h1>
-          <p class="page-sub">Add blood unit records and keep stock visible to hospitals.</p>
-        </div>
-        <div class="grid-1-2">
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">New Blood Record</span></div>
-            <div class="panel-body">
-              <form id="bloodRecordForm">
-                <div class="form-row">
-                  <div class="form-group"><label class="form-label">Blood Type</label><select class="form-select" name="bloodType" required><option>O+</option><option>O-</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option></select></div>
-                  <div class="form-group"><label class="form-label">Component</label><select class="form-select" name="component"><option value="whole_blood">Whole blood</option><option value="red_cells">Red cells</option><option value="plasma">Plasma</option><option value="platelets">Platelets</option></select></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label class="form-label">Units</label><input class="form-input" name="units" type="number" min="1" value="1"></div>
-                  <div class="form-group"><label class="form-label">Status</label><select class="form-select" name="status"><option value="available">Available</option><option value="low">Low</option><option value="critical">Critical</option><option value="reserved">Reserved</option></select></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label class="form-label">Collected On</label><input class="form-input" name="collectionDate" type="date" required></div>
-                  <div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" name="expiryDate" type="date"></div>
-                </div>
-                <button class="btn-primary" type="submit" style="width:100%">Save Blood Record</button>
-              </form>
-              <p class="message" id="bankMessage"></p>
-            </div>
-          </div>
-          <div class="panel-card"><div class="panel-head"><span class="panel-head-title">Bank Profile</span></div><div class="panel-body">${listItem('BK', user.bankName || user.name, user.licenseNumber || 'License not provided', user.acceptingDonors === false ? 'Closed' : 'Open')}${listItem('HR', 'Operating hours', user.operatingHours || 'Not provided', 'Hours')}</div></div>
-        </div>
-      `;
-      document.getElementById('bloodRecordForm').addEventListener('submit', submitBloodRecord);
-    }
-
-    function renderInventory(records = state.inventory) {
-      const total = records.reduce((sum, item) => sum + Number(item.units || 0), 0);
-      const expiring = records.filter((item) => Number(item.daysUntilExpiry) <= 7).length;
-      document.getElementById('panel-inventory').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">Supply Chain</div>
-          <h1 class="page-title">Blood <span>Inventory</span></h1>
-          <p class="page-sub">Live blood unit records from the LifeLink backend.</p>
-        </div>
-        <div class="stats-row">
-          <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${total}</div><div class="stat-label">Total Units</div></div>
-          <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num">${expiring}</div><div class="stat-label">Expiring Soon</div></div>
-          <div class="stat-card" style="--sc-color:#ef4444"><div class="stat-num">${records.filter((item) => ['critical', 'expired'].includes(item.expiryStatus || item.status)).length}</div><div class="stat-label">Critical</div></div>
-        </div>
-        <div class="panel-card">
-          <div class="panel-head"><span class="panel-head-title">Network Stock</span><span class="badge badge-live">Real-Time</span></div>
-          <div class="panel-body">
-            ${records.length ? records.map(inventoryRow).join('') : '<p class="page-sub">No records found yet. Blood banks can add records from their workspace.</p>'}
-          </div>
-        </div>
-      `;
-    }
-
-    function inventoryRow(item) {
-      const units = Number(item.units || 0);
-      const status = item.expiryStatus || item.status || (units < 5 ? 'critical' : units < 10 ? 'low' : 'ok');
-      const pct = Math.min(100, Math.max(4, units * 6));
-      const color = status === 'critical' || status === 'expired' ? 'var(--danger)' : status === 'low' ? 'var(--gold)' : 'var(--accent)';
-      const klass = status === 'critical' || status === 'expired' ? 'st-crit' : status === 'low' ? 'st-low' : 'st-ok';
-      return `
-        <div class="inv-row">
-          <div class="inv-type">${escapeHtml(item.bloodType || 'N/A')}</div>
-          <div><div class="inv-bar-bg"><div class="inv-bar" style="width:${pct}%;background:${color}"></div></div><div class="li-sub">${escapeHtml(String(item.component || 'whole blood').replace('_', ' '))} - expires ${escapeHtml(LL.formatDate(item.expiryDate))}</div></div>
-          <div class="inv-units">${units} units</div>
-          <div class="inv-status ${klass}">${escapeHtml(status)}</div>
-        </div>
-      `;
-    }
-
-    function renderAI() {
-      document.getElementById('panel-ai').innerHTML = `
-        <div class="page-header">
-          <div class="eyebrow">AI Dispatch</div>
-          <h1 class="page-title">Emergency <span>Matching</span></h1>
-          <p class="page-sub">Rank available donors by compatibility, availability, and distance.</p>
-        </div>
-        <div class="grid-2">
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Dispatch Request</span></div>
-            <div class="panel-body">
-              <form id="triageForm">
-                <div class="form-row">
-                  <div class="form-group"><label class="form-label">Blood Type Needed</label><select class="form-select" name="bloodType"><option>O-</option><option>O+</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option></select></div>
-                  <div class="form-group"><label class="form-label">Units Required</label><select class="form-select" name="units"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
-                </div>
-                <div class="form-group"><label class="form-label">Hospital / Location</label><input class="form-input" name="hospital" value="${escapeHtml(state.user?.hospitalName || state.user?.attendingHospital || 'Nearest hospital')}"></div>
-                <div class="form-group"><label class="form-label">Notes</label><textarea class="form-input" name="notes" placeholder="Patient context or compatibility needs"></textarea></div>
-                <button class="btn-primary" type="submit" style="width:100%">Run Emergency Dispatch</button>
-              </form>
-            </div>
-          </div>
-          <div class="panel-card">
-            <div class="panel-head"><span class="panel-head-title">Ranked Matches</span><span class="badge badge-info">AI</span></div>
-            <div class="panel-body" id="triageResults"><p class="page-sub">Ready to rank available donors.</p></div>
-          </div>
-        </div>
-      `;
-      document.getElementById('triageForm').addEventListener('submit', runTriage);
-    }
-
-    async function submitDonation(event) {
-      event.preventDefault();
-      const msg = document.getElementById('donationMessage');
-      msg.textContent = '';
-      msg.classList.remove('ok');
-      try {
-        const data = await LL.updateDonation(Object.fromEntries(new FormData(event.currentTarget)));
-        msg.textContent = data.message || 'Donation recorded.';
-        msg.classList.add('ok');
-        renderShell(data.user);
-      } catch (err) {
-        msg.textContent = err.message;
-      }
-    }
-
-    function hospitalLocation(alert) {
-      const coordinates = alert.hospital?.location?.coordinates || [];
-      const lng = coordinates[0];
-      const lat = coordinates[1];
-      if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) return `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
-      return alert.hospital?.address || 'Location shared after accept';
-    }
-
-    function renderDonorAlerts(alerts) {
-      const host = document.getElementById('donorAlerts');
-      if (!host) return;
-      state.alerts = alerts;
-      host.innerHTML = alerts.length ? alerts.map((alert) => `
-        <div class="list-item">
-          <div class="li-icon">${escapeHtml(alert.bloodType || 'N/A')}</div>
+async function runReceiverSearch(){
+  const bt=document.getElementById('findBT')?.value||'O-';
+  const el=document.getElementById('findResults');
+  if(!el) return;
+  el.innerHTML='<p class="page-sub">Searching...</p>';
+  try{
+    const coords=S.user.location?.coordinates||[80.2707,13.0827];
+    const data=await LL.request(`/alerts/nearby-donors?bloodType=${bt}&lat=${coords[1]}&lng=${coords[0]}&radius=20000`);
+    const donors=data.donors||[];
+    el.innerHTML=donors.length
+      ?donors.slice(0,8).map(d=>`
+        <div class="li">
+          <div class="li-icon">${esc(d.bloodType||'?')}</div>
           <div class="li-body">
-            <div class="li-title">${escapeHtml(alert.title || 'Blood request')}</div>
-            <div class="li-sub">${escapeHtml(alert.message || 'Hospital needs blood support.')}</div>
-            <div class="li-sub">${escapeHtml(alert.hospital?.name || 'Hospital')} - ${escapeHtml(hospitalLocation(alert))}</div>
+            <div class="li-title">${esc(d.name||'Donor')}</div>
+            <div class="li-sub">${esc(d.bloodType)} · ${d.distance?d.distance.toFixed(1)+'km away':''} · ${esc(d.status||'available')}</div>
           </div>
-          <div class="li-right">
-            <button class="btn-green" type="button" onclick="acceptDonorAlert('${escapeHtml(alert._id || alert.id)}')">Accept</button>
-          </div>
+          <div class="li-right">${d.donations||0} donations</div>
+        </div>`).join('')
+      :'<p class="page-sub">No donors found for this blood type nearby.</p>';
+  }catch(e){el.innerHTML=`<p class="msg err">${esc(e.message)}</p>`}
+}
+
+/* ═══════════════════════════════════════════
+   ── HOSPITAL DASHBOARD ──
+═══════════════════════════════════════════ */
+function renderHospitalHome(u){
+  document.getElementById('panel-home').innerHTML=`
+    <div class="ph"><div class="eyebrow">Hospital</div><h1 class="page-title">${esc(u.hospitalName||u.name||'Hospital')} <span>Dashboard</span></h1><p class="page-sub">Real-time blood coordination and donor dispatch.</p></div>
+    <div class="banner">⚠️ <span>Use <strong>Dispatch</strong> to find ranked donors and <strong>Create Alert</strong> to broadcast a blood request.</span></div>
+    <div class="stats-row">
+      <div class="stat-card" style="--sc-color:#0369a1"><div class="stat-num">${u.bedsAvailable??'—'}</div><div class="stat-label">Beds Available</div></div>
+      <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${u.doctorsOnDuty??'—'}</div><div class="stat-label">Doctors On Duty</div></div>
+      <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${u.hasBloodBank?'Yes':'No'}</div><div class="stat-label">Blood Bank</div></div>
+      <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num">${u.isTraumaCentre?'Yes':'No'}</div><div class="stat-label">Trauma Centre</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Hospital Profile</span></div>
+        <div class="card-body">
+          ${li('🏥',esc(u.hospitalName||u.name||'Hospital'),esc(u.registrationNumber||'Reg not provided'),'')}
+          ${li('📞','Contact',esc(u.phone||u.contactPerson||'Not provided'),'')}
+          ${li('🔬','Organ Facility',u.hasOrganFacility?'Available':'Not available','')}
+          ${li('⏰','Open Status',u.isOpen?'Currently Open':'Closed','Status')}
         </div>
-      `).join('') : '<p class="page-sub">No active blood requests match your blood type right now.</p>';
-    }
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Quick Actions</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn"      onclick="switchPanel('dispatch')"  style="width:100%">🚑 Find & Dispatch Donors</button>
+          <button class="btn-cyan" onclick="switchPanel('alerts')"    style="width:100%">⚠️ Create Emergency Alert</button>
+          <button class="btn-sec"  onclick="switchPanel('inventory')" style="width:100%">🏥 View Blood Inventory</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
 
-    async function loadDonorAlerts() {
-      const host = document.getElementById('donorAlerts');
-      if (!host || state.user?.role !== 'donor') return;
-      try {
-        const coords = state.user.location?.coordinates || [];
-        const data = await LL.loadAlerts({ bloodType: state.user.bloodType, lng: coords[0], lat: coords[1] });
-        renderDonorAlerts(data.alerts || []);
-      } catch (err) {
-        host.innerHTML = `<p class="message">${escapeHtml(err.message)}</p>`;
-      }
-    }
+async function loadHospitalDispatch(){
+  const el=document.getElementById('panel-dispatch');
+  if(!el) return;
+  const u=S.user;
+  el.innerHTML=`
+    <div class="ph"><div class="eyebrow">Hospital</div><h1 class="page-title">🚑 Donor <span>Dispatch</span></h1><p class="page-sub">Find and rank available donors for a blood request.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Dispatch Request</span></div>
+        <div class="card-body">
+          <form id="dispatchForm">
+            <div class="fr">
+              <div class="fg"><label class="fl">Blood Type</label><select class="fs" name="bloodType">${['O-','O+','A+','A-','B+','B-','AB+','AB-'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+              <div class="fg"><label class="fl">Units Needed</label><select class="fs" name="units"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+            </div>
+            <div class="fg"><label class="fl">Urgency</label><select class="fs" name="urgency"><option value="routine">Routine</option><option value="urgent">Urgent</option><option value="critical">Critical</option></select></div>
+            <div class="fg"><label class="fl">Clinical Notes</label><textarea class="fi" name="notes" placeholder="Patient context, compatibility notes..."></textarea></div>
+            <button class="btn" type="submit" style="width:100%">🚀 Find Donors</button>
+          </form>
+          <p class="msg" id="dispatchMsg"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Ranked Donors</span><span class="badge badge-info">AI Ranked</span></div>
+        <div class="card-body" id="dispatchResults"><p class="page-sub">Submit the form to rank available donors.</p></div>
+      </div>
+    </div>
+  `;
+  document.getElementById('dispatchForm').addEventListener('submit', runDispatch);
+}
 
-    async function acceptDonorAlert(id) {
-      const msg = document.getElementById('alertMessage');
-      if (msg) msg.textContent = '';
-      try {
-        const data = await LL.acceptAlert(id);
-        if (msg) {
-          msg.textContent = data.message || 'Alert accepted.';
-          msg.classList.add('ok');
-        }
-        if (data.user) renderShell(data.user);
-      } catch (err) {
-        if (msg) msg.textContent = err.message;
-      }
-    }
+async function runDispatch(e){
+  e.preventDefault();
+  const form=e.currentTarget;
+  const payload=Object.fromEntries(new FormData(form));
+  setMsg('dispatchMsg','Searching...','');
+  try{
+    const coords=S.user.location?.coordinates||[80.2707,13.0827];
+    const data=await LL.request(`/match-donors`,{method:'POST',body:{bloodType:payload.bloodType,lat:coords[1],lng:coords[0],isEmergency:payload.urgency==='critical'}});
+    const donors=data.donors||[];
+    const el=document.getElementById('dispatchResults');
+    el.innerHTML=donors.length
+      ?donors.slice(0,8).map((d,i)=>`
+        <div class="li">
+          <div class="li-icon" style="background:var(--primary-soft);color:var(--primary)">#${i+1}</div>
+          <div class="li-body">
+            <div class="li-title">${esc(d.name||'Donor')} · ${esc(d.bloodType)}</div>
+            <div class="li-sub">${d.distance?d.distance.toFixed(1)+'km':''} · ${esc(d.status||'available')} · ${d.donations||0} donations</div>
+          </div>
+          <div class="li-right">${d.score?Math.round(d.score*100)+'/100':'—'}</div>
+        </div>`).join('')
+      :'<p class="page-sub">No donors found. Try expanding the search radius.</p>';
+    setMsg('dispatchMsg','','');
+  }catch(er){setMsg('dispatchMsg',er.message,'err')}
+}
 
-    async function submitBloodRecord(event) {
-      event.preventDefault();
-      const msg = document.getElementById('bankMessage');
-      msg.textContent = '';
-      msg.classList.remove('ok');
-      try {
-        await LL.createBloodRecord(Object.fromEntries(new FormData(event.currentTarget)));
-        msg.textContent = 'Blood record saved.';
-        msg.classList.add('ok');
-        await loadInventory();
-      } catch (err) {
-        msg.textContent = err.message;
-      }
-    }
+/* ═══════════════════════════════════════════
+   ── BLOOD BANK DASHBOARD ──
+═══════════════════════════════════════════ */
+function renderBankHome(u){
+  document.getElementById('panel-home').innerHTML=`
+    <div class="ph"><div class="eyebrow">Blood Bank</div><h1 class="page-title">${esc(u.bankName||u.name||'Blood Bank')} <span>Dashboard</span></h1><p class="page-sub">Manage inventory, process requests, and coordinate with hospitals.</p></div>
+    <div class="stats-row">
+      <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num" id="totalUnits">—</div><div class="stat-label">Total Units</div></div>
+      <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num" id="expiringUnits">—</div><div class="stat-label">Expiring Soon</div></div>
+      <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num" id="criticalUnits">—</div><div class="stat-label">Critical</div></div>
+      <div class="stat-card" style="--sc-color:#1d4ed8"><div class="stat-num">${u.acceptingDonors===false?'Closed':'Open'}</div><div class="stat-label">Accepting Donors</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Bank Profile</span></div>
+        <div class="card-body">
+          ${li('🏦',esc(u.bankName||u.name||'Bank'),esc(u.licenseNumber||'License not provided'),'')}
+          ${li('⏰','Operating Hours',esc(u.operatingHours||'Not provided'),'')}
+          ${li('📍','Location',esc(u.location?.city||u.location?.address||'Not set'),'')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Quick Actions</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn"      onclick="switchPanel('stock')"   style="width:100%">📦 View Stock Levels</button>
+          <button class="btn-green" onclick="switchPanel('records')" style="width:100%">💉 Add Blood Record</button>
+          <button class="btn-sec"  onclick="switchPanel('expiry')"  style="width:100%">⏳ Check Expiry Alerts</button>
+        </div>
+      </div>
+    </div>
+  `;
+  // Load stats in background
+  LL.loadBloodBank().then(data=>{
+    S.inventory=data.inventory||[];
+    const tot=S.inventory.reduce((s,r)=>s+Number(r.units||0),0);
+    const exp=S.inventory.filter(r=>Number(r.daysUntilExpiry)<=7).length;
+    const crit=S.inventory.filter(r=>['critical','expired'].includes(r.expiryStatus||r.status)).length;
+    const el1=document.getElementById('totalUnits');
+    const el2=document.getElementById('expiringUnits');
+    const el3=document.getElementById('criticalUnits');
+    if(el1)el1.textContent=tot;
+    if(el2)el2.textContent=exp;
+    if(el3)el3.textContent=crit;
+  }).catch(()=>{});
+}
 
-    function runTriage(event) {
-      event.preventDefault();
-      const payload = Object.fromEntries(new FormData(event.currentTarget));
-      const donors = state.donors.length ? state.donors : [
-        { name: 'Riya Mehta', bloodType: 'O-', status: 'available', distanceKm: 2.4 },
-        { name: 'Arjun Rao', bloodType: 'A+', status: 'available', distanceKm: 4.1 },
-        { name: 'Nisha Kumar', bloodType: 'AB-', status: 'busy', distanceKm: 7.8 },
-      ];
-      const matches = donors.map((donor) => {
-        const distance = Number(donor.distanceKm || donor.distance || 6);
-        const compatible = donor.bloodType === payload.bloodType || donor.bloodType === 'O-';
-        const score = Math.round((compatible ? 64 : 28) + (donor.status === 'available' ? 18 : -10) + Math.max(0, 16 - distance));
-        return { ...donor, score, eta: Math.max(6, Math.round(distance * 4 + (donor.status === 'available' ? 4 : 12))) };
-      }).sort((a, b) => b.score - a.score).slice(0, 5);
-      document.getElementById('triageResults').innerHTML = matches.map((donor, index) => listItem(`#${index + 1}`, `${donor.name} - ${donor.bloodType || 'N/A'}`, `${donor.status || 'unknown'} - score ${donor.score}/100`, `${donor.eta}m`)).join('');
-    }
+async function loadInventory(panelId='panel-stock'){
+  const el=document.getElementById(panelId);
+  if(!el) return;
+  el.innerHTML=`<div class="ph"><div class="eyebrow">Blood Bank</div><h1 class="page-title">📦 Blood <span>Stock</span></h1></div><p class="page-sub" style="padding:10px">Loading inventory...</p>`;
+  try{
+    const data=await LL.loadBloodBank();
+    S.inventory=data.inventory||[];
+    const tot=S.inventory.reduce((s,r)=>s+Number(r.units||0),0);
+    const exp=S.inventory.filter(r=>Number(r.daysUntilExpiry)<=7).length;
+    const crit=S.inventory.filter(r=>['critical','expired'].includes(r.expiryStatus||r.status)).length;
+    el.innerHTML=`
+      <div class="ph"><div class="eyebrow">${S.user?.role==='hospital'?'Hospital':'Blood Bank'}</div><h1 class="page-title">📦 Blood <span>Stock</span></h1><p class="page-sub">Live inventory from LifeLink network.</p></div>
+      <div class="stats-row">
+        <div class="stat-card" style="--sc-color:#10b981"><div class="stat-num">${tot}</div><div class="stat-label">Total Units</div></div>
+        <div class="stat-card" style="--sc-color:#f59e0b"><div class="stat-num">${exp}</div><div class="stat-label">Expiring ≤7 Days</div></div>
+        <div class="stat-card" style="--sc-color:#0891b2"><div class="stat-num">${crit}</div><div class="stat-label">Critical/Expired</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Network Stock</span><span class="badge badge-live">Real-Time</span></div>
+        <div class="card-body">
+          ${S.inventory.length?S.inventory.map(invRow).join(''):'<p class="page-sub">No inventory records yet.</p>'}
+        </div>
+      </div>`;
+  }catch(e){el.innerHTML=`<p class="msg err" style="padding:20px">${esc(e.message)}</p>`}
+}
 
-    function toast(title, detail) {
-      alert(`${title}\n${detail}`);
-    }
+function renderBankRecords(){
+  const u=S.user;
+  document.getElementById('panel-records').innerHTML=`
+    <div class="ph"><div class="eyebrow">Blood Bank</div><h1 class="page-title">💉 Add <span>Record</span></h1><p class="page-sub">Add a new blood unit to the inventory.</p></div>
+    <div class="grid-1-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">New Blood Unit</span></div>
+        <div class="card-body">
+          <form id="bloodRecordForm">
+            <div class="fr">
+              <div class="fg"><label class="fl">Blood Type</label><select class="fs" name="bloodType" required>${['O+','O-','A+','A-','B+','B-','AB+','AB-'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+              <div class="fg"><label class="fl">Component</label><select class="fs" name="component"><option value="whole_blood">Whole Blood</option><option value="red_cells">Red Cells</option><option value="plasma">Plasma</option><option value="platelets">Platelets</option></select></div>
+            </div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Units</label><input class="fi" name="units" type="number" min="1" value="1"></div>
+              <div class="fg"><label class="fl">Status</label><select class="fs" name="status"><option value="available">Available</option><option value="low">Low</option><option value="critical">Critical</option><option value="reserved">Reserved</option></select></div>
+            </div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Collected On</label><input class="fi" name="collectionDate" type="date" required></div>
+              <div class="fg"><label class="fl">Expiry Date</label><input class="fi" name="expiryDate" type="date"></div>
+            </div>
+            <button class="btn" type="submit" style="width:100%">💾 Save Record</button>
+          </form>
+          <p class="msg" id="bankMsg"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Bank Profile</span></div>
+        <div class="card-body">
+          ${li('🏦',esc(u.bankName||u.name||'Bank'),esc(u.licenseNumber||'License not provided'),'')}
+          ${li('⏰','Operating Hours',esc(u.operatingHours||'Not set'),'')}
+          ${li('👥','Accepting Donors',u.acceptingDonors===false?'Closed':'Open','')}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('bloodRecordForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    setMsg('bankMsg','Saving...','');
+    try{
+      await LL.createBloodRecord(Object.fromEntries(new FormData(e.currentTarget)));
+      setMsg('bankMsg','Record saved!','ok');
+      toast('✅ Blood Record Added','Inventory updated.','var(--accent)');
+      loadInventory('panel-stock');
+    }catch(er){setMsg('bankMsg',er.message,'err')}
+  });
+}
 
-    function switchRole() {
-      LL.clearSession();
-      window.location.href = './login.html';
-    }
+function renderExpiryWatch(){
+  const el=document.getElementById('panel-expiry');
+  const expiring=S.inventory.filter(r=>Number(r.daysUntilExpiry)<=7);
+  el.innerHTML=`
+    <div class="ph"><div class="eyebrow">Blood Bank</div><h1 class="page-title">⏳ Expiry <span>Watch</span></h1><p class="page-sub">${expiring.length} unit(s) expiring within 7 days.</p></div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Expiring Soon</span><span class="badge badge-urgent">Action Required</span></div>
+      <div class="card-body">
+        ${expiring.length?expiring.map(invRow).join(''):'<p class="page-sub">✅ No units expiring in the next 7 days.</p>'}
+      </div>
+    </div>`;
+}
 
-    async function loadInventory() {
-      try {
-        const data = await LL.loadBloodBank();
-        state.inventory = data.inventory || [];
-        state.donors = data.donors || [];
-        renderInventory(state.inventory);
-      } catch (err) {
-        document.getElementById('panel-inventory').innerHTML = `<div class="panel-card"><div class="panel-body"><p class="message">${escapeHtml(err.message)}</p></div></div>`;
-      }
-    }
+/* ═══════════════════════════════════════════
+   SHARED HELPERS
+═══════════════════════════════════════════ */
+function invRow(item){
+  const units=Number(item.units||0);
+  const status=item.expiryStatus||item.status||(units<5?'critical':units<10?'low':'ok');
+  const pct=Math.min(100,Math.max(4,units*6));
+  const color=status==='critical'||status==='expired'?'var(--cyan)':status==='low'?'var(--gold)':'var(--accent)';
+  const klass=status==='critical'||status==='expired'?'st-crit':status==='low'?'st-low':'st-ok';
+  return `<div class="inv-row">
+    <div class="inv-type">${esc(item.bloodType||'?')}</div>
+    <div><div class="inv-bar-bg"><div class="inv-bar" style="width:${pct}%;background:${color}"></div></div>
+    <div class="li-sub">${esc(String(item.component||'whole blood').replace('_',' '))} · exp ${esc(LL.formatDate(item.expiryDate))}</div></div>
+    <div class="inv-units">${units}u</div>
+    <div class="inv-status ${klass}">${esc(status)}</div>
+  </div>`;
+}
 
-    async function init() {
-      try {
-        const data = await LL.me();
-        renderShell(data.user);
-      } catch (_err) {
-        LL.clearSession();
-        window.location.href = './login.html';
-        return;
-      }
-      await loadInventory();
-    }
+function li(icon,title,sub,right){
+  return `<div class="li"><div class="li-icon">${esc(icon)}</div><div class="li-body"><div class="li-title">${esc(title)}</div><div class="li-sub">${esc(sub)}</div></div>${right?`<div class="li-right">${esc(right)}</div>`:''}</div>`;
+}
 
-    init();
-  </script>
+function step(num,title,desc){
+  return `<div class="step"><div class="step-num">${num}</div><div><div class="step-title">${esc(title)}</div><div class="step-desc">${esc(desc)}</div></div></div>`;
+}
+
+/* ═══════════════════════════════════════════
+   HOSPITAL ALERT CREATION
+═══════════════════════════════════════════ */
+function renderHospitalAlertForm(){
+  const el=document.getElementById('panel-alerts');
+  if(!el) return;
+  el.innerHTML=`
+    <div class="ph"><div class="eyebrow">Hospital</div><h1 class="page-title">⚠️ Create <span>Alert</span></h1><p class="page-sub">Broadcast an emergency blood request to nearby donors.</p></div>
+    <div class="grid-1-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Alert Details</span></div>
+        <div class="card-body">
+          <form id="alertForm">
+            <div class="fg"><label class="fl">Alert Type</label><select class="fs" name="type"><option value="blood_request">Blood Request</option><option value="emergency_sos">Emergency SOS</option><option value="low_stock">Low Stock</option></select></div>
+            <div class="fg"><label class="fl">Severity</label><select class="fs" name="severity"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Critical</option></select></div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Blood Type</label><select class="fs" name="bloodType">${['O-','O+','A+','A-','B+','B-','AB+','AB-'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+              <div class="fg"><label class="fl">Units Needed</label><input class="fi" name="unitsNeeded" type="number" min="1" value="2"></div>
+            </div>
+            <div class="fg"><label class="fl">Title</label><input class="fi" name="title" placeholder="e.g. Urgent O- needed for trauma" required></div>
+            <div class="fg"><label class="fl">Message</label><textarea class="fi" name="message" placeholder="Details for donors..."></textarea></div>
+            <button class="btn-cyan" type="submit" style="width:100%">📢 Broadcast Alert</button>
+          </form>
+          <p class="msg" id="alertFormMsg"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Active Alerts</span><span class="badge badge-live">Real-Time</span></div>
+        <div class="card-body" id="hospitalAlertsList"><p class="page-sub">Broadcasts will appear here once sent.</p></div>
+      </div>
+    </div>`;
+  document.getElementById('alertForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const payload=Object.fromEntries(new FormData(e.currentTarget));
+    setMsg('alertFormMsg','Broadcasting...','');
+    try{
+      const data=await LL.request('/alerts',{method:'POST',body:payload});
+      setMsg('alertFormMsg','Alert broadcast to all nearby donors!','ok');
+      toast('📢 Alert Sent',`${payload.bloodType} request broadcast.`,'var(--primary)');
+      document.getElementById('alertForm').reset();
+    }catch(er){setMsg('alertFormMsg',er.message,'err')}
+  });
+}
+
+/* ═══════════════════════════════════════════
+   PANEL LAZY LOAD ON TAB SWITCH
+═══════════════════════════════════════════ */
+const LAZY = {
+  hospital:  { alerts: renderHospitalAlertForm },
+  bloodbank: { records: renderBankRecords },
+};
+
+const _origSwitch = switchPanel;
+// Override to handle lazy renders not covered in switchPanel
+(function(){
+  const nav=document.getElementById('navTabs');
+  // Handled via switchPanel already
+})();
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+async function init(){
+  try{
+    const data=await LL.me();
+    renderShell(data.user);
+
+    // Load socket.io script then connect
+    const script=document.createElement('script');
+    script.src=`${LL.origin}/socket.io/socket.io.js`;
+    script.onload=initSocket;
+    script.onerror=()=>console.warn('Socket.IO not available — real-time disabled');
+    document.head.appendChild(script);
+
+    // Hash-based initial panel
+    const hash=location.hash.replace('#','');
+    const tabs=ROLE_TABS[data.user.role]||[];
+    if(tabs.find(t=>t.id===hash)) setTimeout(()=>switchPanel(hash),100);
+
+    // Register lazy panel handlers
+    const lazyMap = LAZY[data.user.role]||{};
+    document.getElementById('navTabs').querySelectorAll('.nav-tab').forEach(b=>{
+      const lazy=lazyMap[b.dataset.panel];
+      if(lazy) b.addEventListener('click',()=>{ if(!document.getElementById(`panel-${b.dataset.panel}`)?.dataset.loaded){ lazy(); document.getElementById(`panel-${b.dataset.panel}`).dataset.loaded='1'; } });
+    });
+
+  }catch(_){
+    LL.clearSession();
+    location.href='./login.html';
+  }
+}
+
+init();
+</script>
 </body>
 </html>

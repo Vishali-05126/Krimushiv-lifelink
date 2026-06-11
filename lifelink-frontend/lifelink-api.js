@@ -157,8 +157,12 @@ const LL = (() => {
       return data;
     }),
     rejectAlert: (id) => request(`/alerts/${id}/reject`, { method: 'PUT' }),
+    fulfillAlert: (id) => request(`/alerts/${id}/fulfill`, { method: 'PUT' }),
     loadBloodBank: () => request('/bloodbank/features'),
     createBloodRecord: (payload) => request('/bloodbank/records', { method: 'POST', body: payload }),
+    aiTriage: (payload) => request('/ai/triage', { method: 'POST', body: payload }),
+    aiShortcastForecast: () => request('/ai/shortage-forecast'),
+    aiDonorMatchExplain: (payload) => request('/ai/donor-match-explain', { method: 'POST', body: payload }),
   };
 })();
 

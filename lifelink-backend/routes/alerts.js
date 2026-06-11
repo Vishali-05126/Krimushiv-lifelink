@@ -6,11 +6,55 @@ const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 const fileAlertStore = require('../utils/fileAlertStore');
 const fileAuthStore = require('../utils/fileAuthStore');
+const DonorEligibility = require('../utils/donorEligibility');
 
 const isDbReady = () => mongoose.connection.readyState === 1;
 
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// GET /api/alerts/nearby-donors  -- MUST be before /:id routes
+router.get('/nearby-donors', protect, async (req, res) => {
+  try {
+    const { lat, lng, bloodType, radius = 10000, isEmergency = false } = req.query;
+    const isEmergencyBool = isEmergency === 'true';
+
+    const donors = await User.find({
+      role: 'donor',
+      location: {
+        $near: {
+          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: parseInt(radius, 10),
+        },
+      },
+    })
+      .select('name bloodType donations location isAvailable status verifiedBadge lastDonation diseases hemoglobin healthScore')
+      .limit(100);
+
+    const donorsWithDistance = donors.map((donor) => {
+      const [donorLng, donorLat] = donor.location.coordinates;
+      return { ...donor.toObject(), distance: getDistance(parseFloat(lat), parseFloat(lng), donorLat, donorLng) };
+    });
+
+    const rankedDonors = DonorEligibility.filterAndRankDonors(donorsWithDistance, {
+      bloodType,
+      location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+      isEmergency: isEmergencyBool,
+    });
+    res.json({ donors: rankedDonors, count: rankedDonors.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET /api/alerts
-// Fetch open alerts, optionally filtered by blood type or location.
 router.get('/', protect, async (req, res) => {
   try {
     if (!isDbReady()) {
@@ -58,7 +102,6 @@ router.get('/', protect, async (req, res) => {
 });
 
 // POST /api/alerts
-// Hospital or admin creates a new blood request alert.
 router.post('/', protect, async (req, res) => {
   try {
     const { type, severity, title, message, bloodType, unitsNeeded, hospital, location } = req.body;
@@ -76,39 +119,18 @@ router.post('/', protect, async (req, res) => {
         hasBloodBank: true,
         isOpen: true,
       });
-
       if (nearest) {
-        alertHospital = {
-          name: nearest.name,
-          address: nearest.address,
-          location: {
-            type: 'Point',
-            coordinates: nearest.location.coordinates,
-          },
-        };
+        alertHospital = { name: nearest.name, address: nearest.address, location: { type: 'Point', coordinates: nearest.location.coordinates } };
       }
     }
 
-    const alert = await Alert.create({
-      type,
-      severity,
-      title,
-      message,
-      bloodType,
-      unitsNeeded,
-      hospital: alertHospital,
-      requestedBy: req.user._id,
-    });
+    const alert = await Alert.create({ type, severity, title, message, bloodType, unitsNeeded, hospital: alertHospital, requestedBy: req.user._id });
 
     const io = req.app.get('io');
     if (io) {
       io.emit('new_alert', alert);
       if (type === 'emergency_sos' || severity === 'critical') {
-        io.emit('emergency_alert', {
-          bloodType,
-          location: alertHospital?.location || location || null,
-          message: message || title || 'Emergency blood request',
-        });
+        io.emit('emergency_alert', { bloodType, location: alertHospital?.location || location || null, message: message || title || 'Emergency blood request' });
       }
     }
 
@@ -119,12 +141,10 @@ router.post('/', protect, async (req, res) => {
 });
 
 // PUT /api/alerts/:id/accept
-// Donor accepts a blood request.
+// Marks alert accepted + sets donor busy. Does NOT record donation yet.
 router.put('/:id/accept', protect, async (req, res) => {
   try {
-    if (req.user.role !== 'donor') {
-      return res.status(403).json({ message: 'Only donors can accept blood requests' });
-    }
+    if (req.user.role !== 'donor') return res.status(403).json({ message: 'Only donors can accept blood requests' });
     if (req.user.isAvailable === false || req.user.status === 'busy') {
       return res.status(400).json({ message: 'You are marked busy. Change availability before accepting.' });
     }
@@ -132,12 +152,9 @@ router.put('/:id/accept', protect, async (req, res) => {
     if (!isDbReady()) {
       const alert = await fileAlertStore.mark(req.params.id, 'accepted', req.user);
       if (!alert) return res.status(404).json({ message: 'Alert not found' });
-
-      const user = await fileAuthStore.recordAcceptedDonation(req.user._id || req.user.id, {
-        donationsToAdd: 1,
-        livesSavedToAdd: 3,
-      });
-      return res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
+      // Only mark busy — no donation recorded yet
+      const user = await fileAuthStore.updateById(req.user._id || req.user.id, { status: 'busy', isAvailable: false });
+      return res.json({ alert, user, message: 'Request accepted. Head to the hospital — donation will be recorded on completion.' });
     }
 
     const alert = await Alert.findById(req.params.id);
@@ -148,33 +165,26 @@ router.put('/:id/accept', protect, async (req, res) => {
     alert.acceptedBy = req.user._id;
     await alert.save();
 
+    // Only mark donor as busy — donation count updated on fulfill
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      {
-        lastDonation: new Date(),
-        status: 'busy',
-        isAvailable: false,
-        $inc: { donations: 1, livesSaved: 3 },
-      },
+      { status: 'busy', isAvailable: false },
       { new: true }
     );
 
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'accepted', acceptedBy: req.user.name });
 
-    res.json({ alert, user, message: 'Request accepted. Hospital location shared and donation rate updated.' });
+    res.json({ alert, user, message: 'Request accepted. Head to the hospital — donation will be recorded on completion.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
 // PUT /api/alerts/:id/reject
-// Donor rejects a blood request because they are unavailable.
 router.put('/:id/reject', protect, async (req, res) => {
   try {
-    if (req.user.role !== 'donor') {
-      return res.status(403).json({ message: 'Only donors can reject blood requests' });
-    }
+    if (req.user.role !== 'donor') return res.status(403).json({ message: 'Only donors can reject blood requests' });
 
     if (!isDbReady()) {
       const alert = await fileAlertStore.mark(req.params.id, 'rejected', req.user);
@@ -199,74 +209,34 @@ router.put('/:id/reject', protect, async (req, res) => {
 });
 
 // PUT /api/alerts/:id/fulfill
-// Mark donation as complete.
+// Called by hospital/admin after blood is actually drawn — THIS records the donation.
 router.put('/:id/fulfill', protect, async (req, res) => {
   try {
-    const alert = await Alert.findByIdAndUpdate(
-      req.params.id,
-      { status: 'fulfilled' },
-      { new: true }
-    );
+    const alert = await Alert.findByIdAndUpdate(req.params.id, { status: 'fulfilled' }, { new: true });
     if (!alert) return res.status(404).json({ message: 'Alert not found' });
+
+    // Record donation on the donor who accepted
+    let donorUser = null;
+    if (alert.acceptedBy) {
+      donorUser = await User.findByIdAndUpdate(
+        alert.acceptedBy,
+        {
+          lastDonation: new Date(),
+          status: 'available',
+          isAvailable: true,
+          $inc: { donations: 1, livesSaved: 3 },
+        },
+        { new: true }
+      );
+    }
 
     const io = req.app.get('io');
     if (io) io.emit('alert_updated', { id: alert._id, status: 'fulfilled' });
 
-    res.json({ alert, message: 'Donation confirmed - life saved!' });
+    res.json({ alert, donor: donorUser, message: 'Donation confirmed and recorded — life saved! 🩸' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
-
-// GET /api/alerts/nearby-donors
-// Find verified donors near a hospital for a specific blood type.
-router.get('/nearby-donors', protect, async (req, res) => {
-  try {
-    const { lat, lng, bloodType, radius = 10000, isEmergency = false } = req.query;
-    const isEmergencyBool = isEmergency === 'true' || isEmergency === true;
-
-    const donors = await User.find({
-      role: 'donor',
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: parseInt(radius, 10),
-        },
-      },
-    })
-      .select('name bloodType donations location isAvailable status verifiedBadge lastDonation diseases hemoglobin healthScore')
-      .limit(100);
-
-    const donorsWithDistance = donors.map((donor) => {
-      const donorLng = donor.location.coordinates[0];
-      const donorLat = donor.location.coordinates[1];
-      const distance = getDistance(parseFloat(lat), parseFloat(lng), donorLat, donorLng);
-      return { ...donor.toObject(), distance };
-    });
-
-    const DonorEligibility = require('../utils/donorEligibility');
-    const request = {
-      bloodType,
-      location: { lat: parseFloat(lat), lng: parseFloat(lng) },
-      isEmergency: isEmergencyBool,
-    };
-
-    const rankedDonors = DonorEligibility.filterAndRankDonors(donorsWithDistance, request);
-    res.json({ donors: rankedDonors, count: rankedDonors.length });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-function getDistance(lat1, lng1, lat2, lng2) {
-  const earthRadiusKm = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
-    * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadiusKm * c;
-}
 
 module.exports = router;
