@@ -3,19 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LifeLink</title>
-  <script>
-    let user = null;
-    try {
-      user = JSON.parse(localStorage.getItem('ll_user') || 'null');
-    } catch (_err) {
-      localStorage.removeItem('ll_user');
+  <title>LifeLink — Emergency Health Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:    #1D4ED8;
+      --primary-dk: #1E3A8A;
+      --primary-lt: #3B82F6;
+      --primary-xl: #EFF6FF;
+      --accent:     #10B981;
+      --border:     #DBEAFE;
+      --text:       #0F172A;
+      --text2:      #475569;
+      --bg:         #F0F4FF;
+      --white:      #FFFFFF;
+      --fh: "Syne", sans-serif;
+      --fb: "DM Sans", sans-serif;
     }
-    const role = user?.role || 'overview';
-    window.location.replace(localStorage.getItem('ll_token') ? `./dashboard.html#${role}` : './login.html');
-  </script>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--fb); overflow-x: hidden; }
+    button, input { font: inherit; cursor: pointer; }
+
+    #landing-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8eefc 50%, #f0f4ff 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      max-width: 700px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; font: 800 28px var(--fh); color: var(--primary); margin-bottom: 24px; }
+    .logo span { color: var(--accent); }
+    .logo-mark {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-lt));
+      display: grid; place-items: center; color: #fff; font-size: 18px;
+      animation: pulse-mark 2.4s infinite;
+    }
+    @keyframes pulse-mark { 0%,100% { box-shadow: 0 0 0 0 rgba(29,78,216,0.4); } 50% { box-shadow: 0 0 0 10px rgba(29,78,216,0); } }
+
+    .hero-title { font: 800 clamp(28px,3.5vw,40px)/1.2 var(--fh); text-align: center; margin-bottom: 16px; color: var(--text); }
+    .hero-title em { color: var(--primary); font-style: normal; }
+    .hero-sub { font-size: 15px; color: var(--text2); text-align: center; margin-bottom: 28px; max-width: 600px; line-height: 1.6; }
+
+    .auth-buttons { display: flex; gap: 12px; margin-bottom: 20px; justify-content: center; }
+    .btn { padding: 10px 24px; border-radius: 10px; font: 700 13px var(--fh); border: none; min-height: 38px; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-lt)); color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,0.28); }
+    .btn-outline { background: var(--white); border: 1.5px solid var(--border); color: var(--primary); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(29,78,216,0.25); }
+
+    .tagline { font-size: 13px; color: var(--text2); text-align: center; margin-top: 10px; line-height: 1.5; }
+
+    @media (max-width: 900px) {
+      #landing-screen { padding: 20px; }
+      .auth-buttons { flex-direction: column; align-items: center; }
+      .btn { width: 100%; max-width: 220px; }
+    }
+  </style>
 </head>
 <body>
-  <p>Opening LifeLink...</p>
+  <section id="landing-screen">
+    <div class="left-panel">
+      <div class="logo">
+        <div class="logo-mark">🩸</div>Life<span>Link</span>
+      </div>
+
+      <h1 class="hero-title">Emergency Health Network <em>for Everyone</em></h1>
+      <p class="hero-sub">Real-time blood availability, donor matching, and emergency coordination across hospitals and blood banks.</p>
+
+      <div class="auth-buttons">
+        <button class="btn btn-primary" onclick="goToAuth('login')">Sign In</button>
+        <button class="btn btn-outline" onclick="goToAuth('register')">Create Account</button>
+      </div>
+
+      <p class="tagline">LifeLink saves lives by connecting blood donors, receivers, and medical facilities in real-time.</p>
+    </div>
+  </section>
+
+  <script>
+    function goToAuth(mode) {
+      window.location.href = `./login.html?mode=${mode}`;
+    }
+  </script>
 </body>
 </html>

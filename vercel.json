@@ -1,20 +1,13 @@
 {
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/lifelink-frontend/index.html"
-    },
-    {
-      "source": "/login.html",
-      "destination": "/lifelink-frontend/login.html"
-    },
-    {
-      "source": "/dashboard.html",
-      "destination": "/lifelink-frontend/dashboard.html"
-    },
-    {
-      "source": "/lifelink-api.js",
-      "destination": "/lifelink-frontend/lifelink-api.js"
-    }
+  "version": 2,
+  "builds": [
+    { "src": "api/index.js", "use": "@vercel/node" },
+    { "src": "lifelink-frontend/**/*.html", "use": "@vercel/static" },
+    { "src": "lifelink-frontend/**/*.js", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "source": "/api/(.*)", "dest": "/api/index.js" },
+    { "handle": "filesystem" },
+    { "source": "/(.*)", "dest": "/lifelink-frontend/$1" }
   ]
 }

@@ -133,15 +133,22 @@
     .banner{display:flex;gap:10px;margin-bottom:18px;padding:12px 16px;border-radius:13px;border:1px solid rgba(8,145,178,0.25);background:rgba(8,145,178,0.08);color:#0e7490;line-height:1.5;font-size:13px}
 
     /* ── MAP BLOCK ── */
-    .map-block{position:relative;min-height:240px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#dbeafe,#eff6ff);border:1px solid var(--border);cursor:pointer}
-    .map-block::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(29,78,216,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(29,78,216,0.07) 1px,transparent 1px);background-size:36px 36px}
-    .map-ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.55);backdrop-filter:blur(2px);opacity:0;transition:opacity .22s;z-index:3}
-    .map-block:hover .map-ov{opacity:1}
-    .map-ov strong{font:800 13px var(--fh);color:var(--primary)}
-    .map-ov small{font-size:11px;color:var(--text-soft)}
-    .pin{position:absolute;transform:translate(-50%,-50%);z-index:2;text-align:center}
-    .pin-dot{width:13px;height:13px;border-radius:50%;margin:0 auto 3px;border:2px solid #fff;box-shadow:0 0 0 4px rgba(29,78,216,0.12)}
-    .pin-label{font:700 9px var(--fm);background:#fff;border-radius:4px;padding:2px 5px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+    .map-block{position:relative;min-height:280px;border-radius:16px;overflow:hidden;background:var(--border);border:1px solid var(--border)}
+    .map-block iframe{width:100%;height:100%;min-height:280px;border:0;display:block}
+    .map-card{background:var(--white);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:18px;transition:transform .2s,box-shadow .2s,border-color .2s}
+    .map-card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(29,78,216,0.08);border-color:#bfdbfe}
+    .map-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
+    .map-card-title{font:800 13px var(--fh)}
+    .map-card-body{padding:18px}
+    .map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    .map-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text-soft)}
+    .map-legend-dot{width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,0.1)}
+    .map-legend-dot.hospital{background:#1d4ed8}
+    .map-legend-dot.bloodbank{background:#10b981}
+    .map-legend-dot.donor{background:#f59e0b}
+    .map-legend-dot.receiver{background:#0891b2}
+    .map-loading{display:flex;align-items:center;justify-content:center;min-height:280px;color:var(--muted);font-size:13px;font-weight:700}
+    .map-error{display:flex;align-items:center;justify-content:center;min-height:280px;color:var(--cyan);font-size:13px;font-weight:700;text-align:center;padding:20px}
 
     /* ── STEP ── */
     .step{display:flex;gap:11px;align-items:flex-start}
@@ -222,7 +229,50 @@ const ROLE_TABS = {
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function initials(n='LL'){return n.trim().split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase()||'LL'}
 function rlabel(r){return ROLE_META[r]?.label||'LifeLink'}
+let MAPS_EMBED_SRC = '';
+
+async function fetchMapEmbedUrl(lat, lng, zoom = 13) {
+  if (MAPS_EMBED_SRC) return MAPS_EMBED_SRC;
+  try {
+    const params = new URLSearchParams();
+    if (lat && lng) { params.set('lat', lat); params.set('lng', lng); }
+    params.set('zoom', zoom);
+    const data = await LL.request(`/map/embed-url?${params.toString()}`);
+    if (data?.src) {
+      MAPS_EMBED_SRC = data.src;
+    }
+  } catch (_) {}
+  return MAPS_EMBED_SRC;
+}
+
 function mapsUrl(lat,lng,q){return (lat&&lng)?`https://www.google.com/maps?q=${lat},${lng}&z=15`:`https://www.google.com/maps/search/${encodeURIComponent(q||'blood bank near me')}`}
+
+async function buildMapIframe(markers, centerLat, centerLng, zoom = 13) {
+  const src = await fetchMapEmbedUrl(centerLat, centerLng, zoom);
+  if (!src) {
+    return `<div class="map-error">⚠️ Google Maps API key not configured.<br><small>Add GOOGLE_MAPS_API_KEY to backend .env</small></div>`;
+  }
+  return `<iframe src="${src}" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe>`;
+}
+
+function buildMapLegend(markers) {
+  const types = {};
+  markers.forEach(m => { types[m.type] = (types[m.type] || 0) + 1; });
+  const labels = { hospital: '🏥 Hospital', bloodbank: '🏦 Blood Bank', donor: '🩸 Donor', receiver: '👤 Receiver' };
+  return Object.entries(types).map(([type, count]) =>
+    `<span class="map-legend-item"><span class="map-legend-dot ${type}"></span>${labels[type] || type} (${count})</span>`
+  ).join('');
+}
+
+async function loadMapData(role, extraParams = {}) {
+  const coords = S.user?.location?.coordinates || [];
+  const lat = coords[1];
+  const lng = coords[0];
+  const params = new URLSearchParams({ role, ...extraParams });
+  if (lat && lng) { params.set('lat', lat); params.set('lng', lng); }
+  const data = await LL.request(`/map/locations?${params.toString()}`);
+  return data.markers || [];
+}
 
 function toast(title, body='', color='var(--primary)'){
   const box=document.getElementById('rt-toast');
@@ -380,15 +430,10 @@ function renderDonorHome(u){
     </div>
     <div class="grid-2">
       <div class="card">
-        <div class="card-head"><span class="card-title">📍 Your Location</span><span class="badge badge-info">Maps</span></div>
+        <div class="card-head"><span class="card-title">📍 Live Network Map</span><span class="badge badge-live">Real-Time</span></div>
         <div class="card-body">
-          <div class="map-block" onclick="window.open('${mapsUrl(lat,lng,u.name+' blood donor')}','_blank')">
-            <div class="map-ov"><strong>🗺 Open Google Maps</strong><small>${esc(u.name)} · Blood Donor</small></div>
-            <div class="pin" style="left:50%;top:52%"><div class="pin-dot" style="background:#1d4ed8"></div><div class="pin-label">📍 ${esc(u.name||'You')} · ${esc(u.bloodType||'Donor')}</div></div>
-            <div class="pin" style="left:28%;top:35%"><div class="pin-dot" style="background:#10b981"></div><div class="pin-label">Donor nearby</div></div>
-            <div class="pin" style="left:70%;top:30%"><div class="pin-dot" style="background:#0891b2"></div><div class="pin-label">Blood Bank</div></div>
-          </div>
-          <p style="margin-top:8px;font-size:12px"><a href="${mapsUrl(lat,lng,'blood donation centre near me')}" target="_blank" style="color:var(--primary);font-weight:700">🔗 Find donation centres near you</a></p>
+          <div id="donorMapContainer" class="map-block"><div class="map-loading">Loading map...</div></div>
+          <div id="donorMapLegend" class="map-legend"></div>
         </div>
       </div>
       <div class="card">
@@ -402,6 +447,21 @@ function renderDonorHome(u){
       </div>
     </div>
   `;
+  loadDonorMap();
+}
+
+async function loadDonorMap(){
+  const container = document.getElementById('donorMapContainer');
+  const legend = document.getElementById('donorMapLegend');
+  if(!container) return;
+  try{
+    const markers = await loadMapData('donor');
+    const coords = S.user?.location?.coordinates || [];
+    container.innerHTML = buildMapIframe(markers, coords[1], coords[0]);
+    if(legend) legend.innerHTML = buildMapLegend(markers);
+  }catch(e){
+    container.innerHTML = `<div class="map-error">Failed to load map: ${esc(e.message)}</div>`;
+  }
 }
 
 async function loadDonorRequests(){
@@ -509,15 +569,29 @@ function renderReceiverHome(u){
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-title">Quick Actions</span></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-          <button class="btn" onclick="switchPanel('find')" style="width:100%">🔍 Find Blood Donors</button>
-          <button class="btn-cyan" onclick="switchPanel('request')" style="width:100%">📝 Create Blood Request</button>
-          <button class="btn-sec" onclick="window.open('${mapsUrl(loc[1],loc[0],'blood bank near me')}','_blank')" style="width:100%">🗺 Find Blood Banks on Maps</button>
+        <div class="card-head"><span class="card-title">📍 Nearby Facilities</span><span class="badge badge-live">Live Map</span></div>
+        <div class="card-body">
+          <div id="receiverMapContainer" class="map-block"><div class="map-loading">Loading map...</div></div>
+          <div id="receiverMapLegend" class="map-legend"></div>
         </div>
       </div>
     </div>
   `;
+  loadReceiverMap();
+}
+
+async function loadReceiverMap(){
+  const container = document.getElementById('receiverMapContainer');
+  const legend = document.getElementById('receiverMapLegend');
+  if(!container) return;
+  try{
+    const markers = await loadMapData('receiver', { bloodType: S.user?.requiredBloodType || '' });
+    const coords = S.user?.location?.coordinates || [];
+    container.innerHTML = buildMapIframe(markers, coords[1], coords[0]);
+    if(legend) legend.innerHTML = buildMapLegend(markers);
+  }catch(e){
+    container.innerHTML = `<div class="map-error">Failed to load map: ${esc(e.message)}</div>`;
+  }
 }
 
 function renderReceiverFind(){
@@ -539,19 +613,29 @@ function renderReceiverFind(){
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-title">📍 Nearby Blood Banks</span><span class="badge badge-info">Maps</span></div>
+        <div class="card-head"><span class="card-title">📍 Nearby Blood Banks & Donors</span><span class="badge badge-live">Live Map</span></div>
         <div class="card-body">
-          <p class="page-sub" style="margin-bottom:12px">Click the map to find blood banks near your location.</p>
-          <div class="map-block" onclick="window.open('${mapsUrl(u.location?.coordinates?.[1],u.location?.coordinates?.[0],'blood bank near me')}','_blank')">
-            <div class="map-ov"><strong>🗺 Open Google Maps</strong><small>Blood banks near you</small></div>
-            <div class="pin" style="left:50%;top:52%"><div class="pin-dot" style="background:#0891b2"></div><div class="pin-label">📍 You</div></div>
-            <div class="pin" style="left:30%;top:35%"><div class="pin-dot" style="background:#10b981"></div><div class="pin-label">Blood Bank</div></div>
-            <div class="pin" style="left:68%;top:40%"><div class="pin-dot" style="background:#1d4ed8"></div><div class="pin-label">Hospital</div></div>
-          </div>
+          <div id="receiverFindMapContainer" class="map-block"><div class="map-loading">Loading map...</div></div>
+          <div id="receiverFindMapLegend" class="map-legend"></div>
         </div>
       </div>
     </div>
   `;
+  loadReceiverFindMap();
+}
+
+async function loadReceiverFindMap(){
+  const container = document.getElementById('receiverFindMapContainer');
+  const legend = document.getElementById('receiverFindMapLegend');
+  if(!container) return;
+  try{
+    const markers = await loadMapData('receiver', { bloodType: S.user?.requiredBloodType || '' });
+    const coords = S.user?.location?.coordinates || [];
+    container.innerHTML = buildMapIframe(markers, coords[1], coords[0]);
+    if(legend) legend.innerHTML = buildMapLegend(markers);
+  }catch(e){
+    container.innerHTML = `<div class="map-error">Failed to load map: ${esc(e.message)}</div>`;
+  }
 }
 
 async function runReceiverSearch(){
@@ -601,15 +685,29 @@ function renderHospitalHome(u){
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-title">Quick Actions</span></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-          <button class="btn"      onclick="switchPanel('dispatch')"  style="width:100%">🚑 Find & Dispatch Donors</button>
-          <button class="btn-cyan" onclick="switchPanel('alerts')"    style="width:100%">⚠️ Create Emergency Alert</button>
-          <button class="btn-sec"  onclick="switchPanel('inventory')" style="width:100%">🏥 View Blood Inventory</button>
+        <div class="card-head"><span class="card-title">📍 Nearby Blood Banks & Donors</span><span class="badge badge-live">Live Map</span></div>
+        <div class="card-body">
+          <div id="hospitalMapContainer" class="map-block"><div class="map-loading">Loading map...</div></div>
+          <div id="hospitalMapLegend" class="map-legend"></div>
         </div>
       </div>
     </div>
   `;
+  loadHospitalMap();
+}
+
+async function loadHospitalMap(){
+  const container = document.getElementById('hospitalMapContainer');
+  const legend = document.getElementById('hospitalMapLegend');
+  if(!container) return;
+  try{
+    const markers = await loadMapData('hospital');
+    const coords = S.user?.location?.coordinates || [];
+    container.innerHTML = buildMapIframe(markers, coords[1], coords[0]);
+    if(legend) legend.innerHTML = buildMapLegend(markers);
+  }catch(e){
+    container.innerHTML = `<div class="map-error">Failed to load map: ${esc(e.message)}</div>`;
+  }
 }
 
 async function loadHospitalDispatch(){
@@ -690,15 +788,30 @@ function renderBankHome(u){
         </div>
       </div>
       <div class="card">
-        <div class="card-head"><span class="card-title">Quick Actions</span></div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-          <button class="btn"      onclick="switchPanel('stock')"   style="width:100%">📦 View Stock Levels</button>
-          <button class="btn-green" onclick="switchPanel('records')" style="width:100%">💉 Add Blood Record</button>
-          <button class="btn-sec"  onclick="switchPanel('expiry')"  style="width:100%">⏳ Check Expiry Alerts</button>
+        <div class="card-head"><span class="card-title">📍 Nearby Hospitals & Receivers</span><span class="badge badge-live">Live Map</span></div>
+        <div class="card-body">
+          <div id="bankMapContainer" class="map-block"><div class="map-loading">Loading map...</div></div>
+          <div id="bankMapLegend" class="map-legend"></div>
         </div>
       </div>
     </div>
   `;
+  loadBankMap();
+}
+
+async function loadBankMap(){
+  const container = document.getElementById('bankMapContainer');
+  const legend = document.getElementById('bankMapLegend');
+  if(!container) return;
+  try{
+    const markers = await loadMapData('bloodbank');
+    const coords = S.user?.location?.coordinates || [];
+    container.innerHTML = buildMapIframe(markers, coords[1], coords[0]);
+    if(legend) legend.innerHTML = buildMapLegend(markers);
+  }catch(e){
+    container.innerHTML = `<div class="map-error">Failed to load map: ${esc(e.message)}</div>`;
+  }
+}
   // Load stats in background
   LL.loadBloodBank().then(data=>{
     S.inventory=data.inventory||[];

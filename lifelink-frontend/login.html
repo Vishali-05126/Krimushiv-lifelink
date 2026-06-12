@@ -454,6 +454,17 @@
   // Redirect if already logged in
   if (LL.getToken()) LL.goToDashboard();
 
+  // Check for mode parameter to skip role selection
+  const urlParams = new URLSearchParams(window.location.search);
+  const startMode = urlParams.get('mode');
+  if (startMode === 'login' || startMode === 'register') {
+    currentRole = 'donor';
+    openAuth('donor');
+    if (startMode === 'register') {
+      registerTab.click();
+    }
+  }
+
   // ── Role metadata ──────────────────────────────────────────
   const ROLES = {
     donor:     { title: 'Blood Donor',  icon: '🩸', color: '#1D4ED8', dark: '#1E3A8A', eyebrow: 'Donor Access',     copy: 'Donate blood, track readiness, and respond to emergency requests near you.',       mini: [['Live','Nearby emergency alerts.'],['ABO','Blood type aware matching.'],['Impact','Donations and lives saved.'],['Care','Eligibility reminders.']] },
