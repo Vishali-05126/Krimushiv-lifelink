@@ -6,7 +6,7 @@ const http = require('http');
 const path = require('path');
 const { connectDB } = require('./config/db');
 
-const fileDbFallbackEnabled = (process.env.NODE_ENV || 'development') === 'development';
+const fileDbFallbackEnabled = (process.env.NODE_ENV || 'development') === 'development' || process.env.FILE_DB_FALLBACK === 'true';
 
 let socketio = null;
 try {

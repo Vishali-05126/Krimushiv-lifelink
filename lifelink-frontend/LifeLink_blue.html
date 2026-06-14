@@ -3821,5 +3821,11 @@ Always be clear, compassionate, and medically accurate. Keep responses concise (
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="./lifelink-api.js"></script>
+  <script>
+    // Redirect to login if not authenticated
+    if (!LL.getToken()) {
+      window.location.href = './login.html';
+    }
+  </script>
 </body>
 </html>

@@ -9,5 +9,9 @@
     { "source": "/api/(.*)", "dest": "/api/index.js" },
     { "handle": "filesystem" },
     { "source": "/(.*)", "dest": "/lifelink-frontend/$1" }
-  ]
+  ],
+  "env": {
+    "FILE_DB_FALLBACK": "true",
+    "JWT_SECRET": "lifelink-vercel-secret-key"
+  }
 }
